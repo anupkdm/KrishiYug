@@ -1,479 +1,876 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
-import { Badge } from "../../components/common/Badge";
-import { Modal } from "../../components/common/Modal";
 import { 
   Tractor, 
   Search, 
   Filter, 
   MapPin, 
-  Star, 
-  Calendar, 
-  Clock, 
-  Sparkles, 
   CheckCircle2, 
-  IndianRupee,
+  X, 
+  Phone, 
+  Calendar, 
+  IndianRupee, 
+  Sparkles, 
+  PlusCircle,
+  Eye,
+  Send,
+  Fuel,
+  Info,
   ShieldCheck,
-  Zap,
-  Phone,
-  Layers
+  Zap
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export const MachineryTab = () => {
   const { user } = useAuth();
-  const [machineryList, setMachineryList] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [activeMobileTab, setActiveMobileTab] = useState("rent"); // "rent" | "provide"
+  
+  // Search & Filter State (TO RENT)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("All");
+  const [filterLocation, setFilterLocation] = useState("All");
+  const [filterRentRange, setFilterRentRange] = useState("All");
 
-  // Recommendation Form
-  const [recForm, setRecForm] = useState({
-    crop: user?.farm?.primaryCrop || "Soybean",
-    farmSizeAcres: user?.farm?.sizeAcres || "8.5",
-    stage: "Harvesting & Maturation",
-    soilType: user?.farm?.soilType || "Black Cotton Soil",
-    operation: "Harvesting & Threshing"
+  // Provide Machine Form State
+  const [provideForm, setProvideForm] = useState({
+    name: "Tractor",
+    ownerName: user?.name || "Rahul Patil",
+    modelNumber: "Mahindra 575 DI",
+    machineType: "Tractor",
+    rentPerAcre: "1200",
+    rentPerHectare: "2965",
+    location: user?.location ? `${user.location.village || 'Niphad'}, ${user.location.district || 'Nashik'}` : "Niphad, Nashik",
+    availability: "Available",
+    phone: user?.phone || "+91 98231 45678"
   });
+  const [submittingProvide, setSubmittingProvide] = useState(false);
+  const [provideSuccessMsg, setProvideSuccessMsg] = useState("");
 
-  // Booking Modal
-  const [selectedMachineForBooking, setSelectedMachineForBooking] = useState(null);
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [bookingForm, setBookingForm] = useState({
-    acreage: user?.farm?.sizeAcres || "8.5",
-    bookingDate: "2026-09-10",
-    contactPhone: user?.phone || "+91 98231 45678",
-    notes: "Requires operator for field harvesting operation."
+  // Details Modal State
+  const [detailsMachine, setDetailsMachine] = useState(null);
+
+  // Rent Now Modal State
+  const [rentMachine, setRentMachine] = useState(null);
+  const [rentForm, setRentForm] = useState({
+    acres: "5",
+    bookingDate: new Date().toISOString().split("T")[0],
+    phone: user?.phone || "+91 98231 45678",
+    notes: "Requires operator for field preparation"
   });
-  const [bookingSubmitted, setBookingSubmitted] = useState(false);
-  const [bookingSuccessMsg, setBookingSuccessMsg] = useState("");
+  const [submittingRent, setSubmittingRent] = useState(false);
+  const [rentSuccessMsg, setRentSuccessMsg] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [machRes, recRes] = await Promise.all([
-        api.getMachinery({ category: selectedCategory }),
-        api.getMachineryRecommendations({
-          crop: recForm.crop,
-          farmSizeAcres: recForm.farmSizeAcres,
-          stage: recForm.stage,
-          soilType: recForm.soilType,
-          operation: recForm.operation
-        })
-      ]);
-
-      setMachineryList(machRes.machinery || []);
-      setRecommendations(recRes.recommendations || []);
-    } catch (err) {
-      console.error("Machinery data fetch error:", err);
-    } finally {
-      setLoading(false);
+  // Initial Seed Machines Matching User Spec
+  const INITIAL_MACHINES = [
+    {
+      id: "mach-1",
+      name: "Tractor",
+      ownerName: "Rahul Patil",
+      modelNumber: "Mahindra 575 DI",
+      machineType: "Tractor",
+      rentPerAcre: 1200,
+      rentPerHectare: 2965,
+      location: "Niphad, Nashik",
+      availability: "Available",
+      phone: "+91 98231 45678",
+      capacity: "45 HP / 4-Cylinder",
+      fuel: "Diesel",
+      suitableFor: ["Ploughing", "Tillage", "Haulage", "Rotavator Operation"],
+      rating: 4.9
+    },
+    {
+      id: "mach-2",
+      name: "Rotavator",
+      ownerName: "Amit Sharma",
+      modelNumber: "Shaktiman SRT-200",
+      machineType: "Rotavator",
+      rentPerAcre: 900,
+      rentPerHectare: 2224,
+      location: "Lasalgaon, Nashik",
+      availability: "Available",
+      phone: "+91 97654 88990",
+      capacity: "6ft / 42 L-Blades",
+      fuel: "Tractor PTO Driven",
+      suitableFor: ["Seedbed Preparation", "Stubble Incorporation", "Soil Aeration"],
+      rating: 4.8
+    },
+    {
+      id: "mach-3",
+      name: "Combine Harvester",
+      ownerName: "Ganesh Kadam",
+      modelNumber: "Preet 987 Self-Propelled",
+      machineType: "Harvester",
+      rentPerAcre: 1800,
+      rentPerHectare: 4448,
+      location: "Dindori, Nashik",
+      availability: "Available",
+      phone: "+91 98233 44556",
+      capacity: "101 HP / 4.2m Cutter Bar",
+      fuel: "Diesel",
+      suitableFor: ["Soybean", "Wheat", "Paddy (Rice)", "Gram Harvesting"],
+      rating: 4.9
+    },
+    {
+      id: "mach-4",
+      name: "Agricultural Drone Sprayer",
+      ownerName: "Kiran Waghmare",
+      modelNumber: "IoTech Agri 16L Drone",
+      machineType: "Drone Sprayer",
+      rentPerAcre: 450,
+      rentPerHectare: 1112,
+      location: "Panchavati, Nashik",
+      availability: "Available",
+      phone: "+91 97654 33210",
+      capacity: "16 Litre Tank / DGCA Certified",
+      fuel: "Battery Powered",
+      suitableFor: ["Nano Urea", "Pesticide Spraying", "Foliar Nutrition"],
+      rating: 5.0
+    },
+    {
+      id: "mach-5",
+      name: "Power Tiller & Cultivator",
+      ownerName: "Sanjay Shinde",
+      modelNumber: "VST Shakti 130 DI",
+      machineType: "Power Tiller",
+      rentPerAcre: 750,
+      rentPerHectare: 1853,
+      location: "Sinnar, Nashik",
+      availability: "Available",
+      phone: "+91 98600 55678",
+      capacity: "13 HP Engine",
+      fuel: "Diesel",
+      suitableFor: ["Inter-cultivation", "Orchards", "Vegetable Beds"],
+      rating: 4.7
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedCategory]);
-
-  const handleGenerateRecommendations = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await api.getMachineryRecommendations(recForm);
-      setRecommendations(res.recommendations || []);
-      confetti({ particleCount: 40, spread: 60 });
-    } catch (err) {
-      alert("Failed to generate recommendations: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenBooking = (machine) => {
-    setSelectedMachineForBooking(machine);
-    setBookingModalOpen(true);
-    setBookingSubmitted(false);
-  };
-
-  const handleConfirmBooking = async (e) => {
-    e.preventDefault();
-    setBookingSubmitted(true);
-    try {
-      await api.bookMachinery({
-        machineryId: selectedMachineForBooking.id,
-        acreage: bookingForm.acreage,
-        bookingDate: bookingForm.bookingDate,
-        contactPhone: bookingForm.contactPhone,
-        notes: bookingForm.notes
-      });
-
-      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
-      setBookingSuccessMsg(`Successfully booked ${selectedMachineForBooking.name} for ${bookingForm.bookingDate}!`);
-      setBookingModalOpen(false);
-    } catch (err) {
-      alert("Booking failed: " + err.message);
-      setBookingSubmitted(false);
-    }
-  };
-
-  const CATEGORIES = [
-    "Tractor",
-    "Harvester",
-    "Rotavator",
-    "Drone",
-    "Seeder",
-    "Sprayer",
-    "Cultivator",
-    "Irrigation Pump"
   ];
 
+  const [machines, setMachines] = useState(() => {
+    try {
+      const saved = localStorage.getItem("krishi_machinery_items");
+      return saved ? JSON.parse(saved) : INITIAL_MACHINES;
+    } catch (e) {
+      return INITIAL_MACHINES;
+    }
+  });
+
+  // Save to LocalStorage whenever machines state changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("krishi_machinery_items", JSON.stringify(machines));
+    } catch (e) {}
+  }, [machines]);
+
+  // Handle Rent Per Acre Change to auto-calculate Rent Per Hectare
+  const handleRentAcreChange = (val) => {
+    const acreNum = parseFloat(val) || 0;
+    const hectareCalc = Math.round(acreNum * 2.47105);
+    setProvideForm(prev => ({
+      ...prev,
+      rentPerAcre: val,
+      rentPerHectare: hectareCalc.toString()
+    }));
+  };
+
+  // Handle Add Machine (PROVIDE)
+  const handleAddMachine = (e) => {
+    e.preventDefault();
+    if (!provideForm.name || !provideForm.ownerName || !provideForm.rentPerAcre) {
+      alert("Please fill in the required machine name, owner name, and rent.");
+      return;
+    }
+
+    setSubmittingProvide(true);
+    const newMachine = {
+      id: `mach-${Date.now()}`,
+      name: provideForm.name,
+      ownerName: provideForm.ownerName,
+      modelNumber: provideForm.modelNumber || "Standard 2026 Model",
+      machineType: provideForm.machineType || provideForm.name,
+      rentPerAcre: parseFloat(provideForm.rentPerAcre) || 1000,
+      rentPerHectare: parseFloat(provideForm.rentPerHectare) || 2471,
+      location: provideForm.location || "Niphad, Nashik",
+      availability: provideForm.availability || "Available",
+      phone: provideForm.phone || "+91 98000 00000",
+      capacity: "Standard Agricultural Specification",
+      fuel: "Diesel",
+      suitableFor: ["Agricultural Operations", "Field Preparation"],
+      rating: 5.0,
+      createdAt: new Date().toISOString()
+    };
+
+    setTimeout(() => {
+      setMachines(prev => [newMachine, ...prev]);
+      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+      setProvideSuccessMsg(`🎉 Machine "${newMachine.name}" (${newMachine.modelNumber}) added to rental portal successfully!`);
+      setSubmittingProvide(false);
+      
+      // Reset form
+      setProvideForm(prev => ({
+        ...prev,
+        modelNumber: "",
+        rentPerAcre: "",
+        rentPerHectare: ""
+      }));
+    }, 400);
+  };
+
+  // Handle Rent Now Submission
+  const handleConfirmRent = (e) => {
+    e.preventDefault();
+    setSubmittingRent(true);
+
+    setTimeout(() => {
+      confetti({ particleCount: 50, spread: 60 });
+      setRentSuccessMsg(`Booking request sent to owner ${rentMachine.ownerName} for ${rentMachine.name}!`);
+      setSubmittingRent(false);
+      setRentMachine(null);
+    }, 600);
+  };
+
+  // Filtered Machines for TO RENT
+  const filteredMachines = machines.filter(m => {
+    // 1. Search Query (name, model, owner)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = m.name && m.name.toLowerCase().includes(q);
+      const matchModel = m.modelNumber && m.modelNumber.toLowerCase().includes(q);
+      const matchOwner = m.ownerName && m.ownerName.toLowerCase().includes(q);
+      const matchLoc = m.location && m.location.toLowerCase().includes(q);
+      if (!matchName && !matchModel && !matchOwner && !matchLoc) return false;
+    }
+
+    // 2. Machine Type Filter
+    if (filterType !== "All") {
+      if (m.machineType && !m.machineType.toLowerCase().includes(filterType.toLowerCase()) && !m.name.toLowerCase().includes(filterType.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // 3. Location Filter
+    if (filterLocation !== "All") {
+      if (m.location && !m.location.toLowerCase().includes(filterLocation.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // 4. Rent Range Filter
+    if (filterRentRange !== "All") {
+      const max = parseFloat(filterRentRange);
+      if (m.rentPerAcre > max) return false;
+    }
+
+    return true;
+  });
+
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-12 font-sans max-w-[1560px] mx-auto">
+      {/* 1. TOP HEADER */}
+      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-sky-800 bg-sky-100 px-3 py-0.5 rounded-full border border-sky-200">
-              Farm Machinery Intelligence
-            </span>
-            <span className="text-xs font-bold text-slate-400">• Custom Hiring Centre Hub</span>
+            <span className="text-2xl">🚜</span>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight font-display">
+              MACHINE AVAILABILITY
+            </h1>
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 font-display mt-1">
-            Machinery Availability & Recommendations
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Compare rental costs, calculate time and labour savings, and book nearby tractors, harvesters & drones.
+          <p className="text-sm font-semibold text-slate-600 mt-1">
+            Find, rent and provide agricultural machines
           </p>
+        </div>
+
+        {/* Mobile View Toggle */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl md:hidden self-start">
+          <button
+            onClick={() => setActiveMobileTab("rent")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+              activeMobileTab === "rent" ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600"
+            }`}
+          >
+            TO RENT ({filteredMachines.length})
+          </button>
+          <button
+            onClick={() => setActiveMobileTab("provide")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+              activeMobileTab === "provide" ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600"
+            }`}
+          >
+            ➕ PROVIDE
+          </button>
         </div>
       </div>
 
-      {bookingSuccessMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+      {/* Success Messages */}
+      {provideSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{bookingSuccessMsg}</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{provideSuccessMsg}</span>
           </div>
-          <button onClick={() => setBookingSuccessMsg("")} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+          <button onClick={() => setProvideSuccessMsg("")} className="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
         </div>
       )}
 
-      {/* Crop-Based AI Machinery Recommendation Engine (Requirement #13) */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-400/30">
-            <Sparkles className="w-5 h-5" />
+      {rentSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{rentSuccessMsg}</span>
           </div>
-          <div>
-            <h2 className="text-lg font-bold font-display text-white">Crop-Based Machinery Recommendation Engine</h2>
-            <p className="text-xs text-slate-300">Input crop stage and operation to calculate ROI, hours required & labour cost savings.</p>
-          </div>
+          <button onClick={() => setRentSuccessMsg("")} className="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
         </div>
+      )}
 
-        {/* Input Form */}
-        <form onSubmit={handleGenerateRecommendations} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Crop
-            </label>
-            <select
-              value={recForm.crop}
-              onChange={(e) => setRecForm({ ...recForm, crop: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-medium focus:outline-none"
-            >
-              <option value="Soybean" className="text-slate-900">Soybean</option>
-              <option value="Wheat" className="text-slate-900">Wheat</option>
-              <option value="Cotton" className="text-slate-900">Cotton</option>
-              <option value="Onion" className="text-slate-900">Onion</option>
-              <option value="Tomato" className="text-slate-900">Tomato</option>
-              <option value="Rice" className="text-slate-900">Rice (Paddy)</option>
-              <option value="Sugarcane" className="text-slate-900">Sugarcane</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Farm Size (Acres)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              value={recForm.farmSizeAcres}
-              onChange={(e) => setRecForm({ ...recForm, farmSizeAcres: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-medium focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Farming Stage
-            </label>
-            <select
-              value={recForm.stage}
-              onChange={(e) => setRecForm({ ...recForm, stage: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-medium focus:outline-none"
-            >
-              <option value="Harvesting" className="text-slate-900">Harvesting & Maturation</option>
-              <option value="Sowing" className="text-slate-900">Sowing & Seedbed Preparation</option>
-              <option value="Crop Protection" className="text-slate-900">Crop Protection & Spraying</option>
-              <option value="Land Leveling" className="text-slate-900">Pre-sowing Land Leveling</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Soil Type
-            </label>
-            <input
-              type="text"
-              value={recForm.soilType}
-              onChange={(e) => setRecForm({ ...recForm, soilType: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-medium focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Get AI Recommendation</span>
-            </button>
-          </div>
-        </form>
-
-        {/* Recommendations Output Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          {recommendations.map((rec) => (
-            <div
-              key={rec.rank}
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-sky-400/20 text-sky-300 border border-sky-400/30">
-                    #{rec.rank} Recommended Choice
-                  </span>
-                  <span className="text-xs font-bold text-emerald-400">{rec.suitabilityScore}% Fit</span>
-                </div>
-
-                <h3 className="font-bold text-sm text-white">{rec.machineName}</h3>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">{rec.reason}</p>
-
-                <div className="mt-4 space-y-1.5 text-xs text-slate-200">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Est. Rental Cost:</span>
-                    <span className="font-bold text-white">₹{rec.estimatedRentalCost?.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Time Required:</span>
-                    <span className="font-bold text-white">{rec.timeRequiredHours} Hours</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-400 font-bold">
-                    <span>Labour Cost Saved:</span>
-                    <span>+₹{rec.netSavingsVsManual?.toLocaleString('en-IN')} ({rec.savingsPercent}%)</span>
-                  </div>
-                </div>
+      {/* 2. TWO-COLUMN SPLIT: [ TO RENT ] (Left) and [ PROVIDE ] (Right) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        
+        {/* ================= LEFT COLUMN: TO RENT ================= */}
+        <div className={`md:col-span-7 space-y-5 ${activeMobileTab === "provide" ? "hidden md:block" : "block"}`}>
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🚜</span>
+                <h2 className="text-lg font-black text-slate-900 font-display">
+                  TO RENT
+                </h2>
               </div>
+              <span className="text-xs font-bold text-slate-500">
+                {filteredMachines.length} Machines Available
+              </span>
+            </div>
 
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[11px] text-slate-300 font-medium">{rec.providerName}</span>
+            {/* 🔍 Search Machines */}
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500">
+                🔍 Search Machines
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search machine name, model or owner (e.g. Tractor, Mahindra, Rahul)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-4 pr-10 py-2.5 rounded-2xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-slate-50"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* ⚙ Filter Section */}
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <Filter className="w-3 h-3 text-slate-400" />
+                <span>⚙ Filter</span>
+              </label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {/* Machine Type Filter */}
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
+                >
+                  <option value="All">Machine Type ▼ (All)</option>
+                  <option value="Tractor">Tractor</option>
+                  <option value="Rotavator">Rotavator</option>
+                  <option value="Harvester">Harvester</option>
+                  <option value="Drone Sprayer">Drone Sprayer</option>
+                  <option value="Power Tiller">Power Tiller</option>
+                </select>
+
+                {/* Location Filter */}
+                <select
+                  value={filterLocation}
+                  onChange={(e) => setFilterLocation(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
+                >
+                  <option value="All">Location ▼ (All)</option>
+                  <option value="Niphad">Niphad</option>
+                  <option value="Lasalgaon">Lasalgaon</option>
+                  <option value="Nashik">Nashik</option>
+                  <option value="Dindori">Dindori</option>
+                  <option value="Sinnar">Sinnar</option>
+                </select>
+
+                {/* Rent Range Filter */}
+                <select
+                  value={filterRentRange}
+                  onChange={(e) => setFilterRentRange(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
+                >
+                  <option value="All">Rent Range ▼ (All)</option>
+                  <option value="800">Up to ₹800/Acre</option>
+                  <option value="1200">Up to ₹1,200/Acre</option>
+                  <option value="2000">Up to ₹2,000/Acre</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Machine Cards List */}
+          <div className="space-y-4">
+            {filteredMachines.length === 0 ? (
+              <div className="bg-white rounded-3xl p-10 text-center border border-slate-200">
+                <Tractor className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                <h3 className="font-bold text-sm text-slate-800">No Machines Found</h3>
+                <p className="text-xs text-slate-500 mt-1">Try changing your search or filter criteria.</p>
                 <button
                   onClick={() => {
-                    const match = machineryList.find(m => m.category === rec.category) || machineryList[0];
-                    handleOpenBooking(match);
+                    setSearchQuery("");
+                    setFilterType("All");
+                    setFilterLocation("All");
+                    setFilterRentRange("All");
                   }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-900 hover:bg-sky-100 transition-colors"
+                  className="mt-3 px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs"
                 >
-                  Book Now
+                  Clear Filters
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ) : (
+              filteredMachines.map((machine) => (
+                <div
+                  key={machine.id}
+                  className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all space-y-4"
+                >
+                  {/* Top Line: Name & Availability */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 text-2xl flex items-center justify-center shadow-inner shrink-0">
+                        🚜
+                      </div>
+                      <div>
+                        <h3 className="font-black text-base text-slate-900 font-display">
+                          {machine.name}
+                        </h3>
+                        <p className="text-xs font-semibold text-slate-500 flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <span>{machine.location}</span>
+                        </p>
+                      </div>
+                    </div>
 
-      {/* Machinery Directory & Category Filter */}
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-bold text-slate-900 font-display">Available Equipment Catalog</h2>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>{machine.availability}</span>
+                    </span>
+                  </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setSelectedCategory("")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                selectedCategory === "" ? "bg-slate-900 text-white" : "bg-white text-slate-700 border border-slate-200"
-              }`}
-            >
-              All Equipment
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedCategory === cat ? "bg-slate-900 text-white" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+                  {/* Machine Details Table/List */}
+                  <div className="bg-slate-50/80 rounded-2xl p-3.5 border border-slate-200/80 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-500">Owner:</span>
+                      <span className="font-black text-slate-900">{machine.ownerName}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-500">Model No.:</span>
+                      <span className="font-bold text-slate-800 font-mono">{machine.modelNumber}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                      <span className="font-bold text-slate-500">Rent / Acre:</span>
+                      <span className="font-black text-emerald-700 text-sm">
+                        ₹{machine.rentPerAcre?.toLocaleString('en-IN')} / Acre
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-500">Rent / Hectare:</span>
+                      <span className="font-bold text-slate-700">
+                        ₹{machine.rentPerHectare?.toLocaleString('en-IN')} / Hectare
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Buttons: [ View Details ] [ Rent Now ] */}
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <button
+                      onClick={() => setDetailsMachine(machine)}
+                      className="py-2.5 px-4 rounded-xl border border-slate-300 hover:border-emerald-600 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-black text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>View Details</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setRentMachine(machine);
+                        setRentForm(prev => ({ ...prev, acres: "5" }));
+                      }}
+                      className="py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-700/30 hover:scale-[1.02]"
+                    >
+                      <span>Rent Now</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Machinery Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {machineryList.map((mach) => (
-            <div
-              key={mach.id}
-              className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      {mach.category}
-                    </span>
-                    <h3 className="font-bold text-base text-slate-900 font-display">{mach.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 text-amber-800 text-xs font-bold">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span>{mach.rating}</span>
-                  </div>
-                </div>
 
-                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{mach.location} (~{mach.distanceKm} km)</span>
-                </p>
-
-                <div className="mt-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Rental Rate:</span>
-                    <span className="font-bold text-slate-900">₹{mach.rentalPricePerAcre} / acre</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Capacity:</span>
-                    <span className="font-semibold text-slate-700">{mach.capacity}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Provider:</span>
-                    <span className="font-semibold text-slate-700 truncate max-w-[150px]">{mach.provider}</span>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {mach.features?.map((f) => (
-                    <span key={f} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/60">
-                      {f}
-                    </span>
-                  ))}
-                </div>
+        {/* ================= RIGHT COLUMN: PROVIDE ================= */}
+        <div className={`md:col-span-5 ${activeMobileTab === "rent" ? "hidden md:block" : "block"}`}>
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-5 sticky top-20">
+            {/* Header */}
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">➕</span>
+                <h2 className="text-lg font-black text-slate-900 font-display">
+                  Provide Your Machine
+                </h2>
               </div>
-
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  🟢 {mach.availability}
-                </span>
-                <button
-                  onClick={() => handleOpenBooking(mach)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all"
-                >
-                  Book Machine →
-                </button>
-              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                Rent Out
+              </span>
             </div>
-          ))}
+
+            <p className="text-xs font-semibold text-slate-500 leading-relaxed">
+              Earn rental income by registering your tractor, harvester, rotavator, or drone for neighboring farmers.
+            </p>
+
+            {/* Registration Form */}
+            <form onSubmit={handleAddMachine} className="space-y-3.5">
+              {/* Machine Name */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Machine Name *
+                </label>
+                <select
+                  value={provideForm.name}
+                  onChange={(e) => {
+                    setProvideForm({ ...provideForm, name: e.target.value, machineType: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="Tractor">Tractor</option>
+                  <option value="Rotavator">Rotavator</option>
+                  <option value="Combine Harvester">Combine Harvester</option>
+                  <option value="Agricultural Drone Sprayer">Agricultural Drone Sprayer</option>
+                  <option value="Power Tiller">Power Tiller</option>
+                  <option value="Multi-Crop Thresher">Multi-Crop Thresher</option>
+                  <option value="Seed Drill & Planter">Seed Drill & Planter</option>
+                  <option value="Cultivator">Cultivator</option>
+                </select>
+              </div>
+
+              {/* Owner Name */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Owner Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul Patil"
+                  value={provideForm.ownerName}
+                  onChange={(e) => setProvideForm({ ...provideForm, ownerName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Model Number */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Model No. *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mahindra 575 DI / Shaktiman SRT-200"
+                  value={provideForm.modelNumber}
+                  onChange={(e) => setProvideForm({ ...provideForm, modelNumber: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 font-mono"
+                />
+              </div>
+
+              {/* Rent per Acre & Hectare */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                    Rent / Acre (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="1200"
+                    value={provideForm.rentPerAcre}
+                    onChange={(e) => handleRentAcreChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 font-mono text-emerald-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                    Rent / Hectare (₹)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="2965"
+                    value={provideForm.rentPerHectare}
+                    onChange={(e) => setProvideForm({ ...provideForm, rentPerHectare: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-slate-50"
+                  />
+                </div>
+              </div>
+
+              {/* Availability Radio Option */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Availability *
+                </label>
+                <div className="flex items-center gap-4 pt-1">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="Available"
+                      checked={provideForm.availability === "Available"}
+                      onChange={(e) => setProvideForm({ ...provideForm, availability: e.target.value })}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>🟢 Available</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="Not Available"
+                      checked={provideForm.availability === "Not Available"}
+                      onChange={(e) => setProvideForm({ ...provideForm, availability: e.target.value })}
+                      className="text-rose-600 focus:ring-rose-500"
+                    />
+                    <span>🔴 Not Available</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Location (Village, District) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Niphad, Nashik"
+                  value={provideForm.location}
+                  onChange={(e) => setProvideForm({ ...provideForm, location: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={submittingProvide}
+                className="w-full py-3.5 px-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow-md shadow-emerald-700/30 transition-all flex items-center justify-center gap-2 mt-2 hover:scale-[1.01]"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>{submittingProvide ? "Adding..." : "+ ADD MACHINE"}</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
-      {/* Booking Modal */}
-      <Modal
-        isOpen={bookingModalOpen}
-        onClose={() => setBookingModalOpen(false)}
-        title={`Book Machinery: ${selectedMachineForBooking?.name}`}
-      >
-        {selectedMachineForBooking && (
-          <form onSubmit={handleConfirmBooking} className="space-y-4">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-bold text-slate-900">{selectedMachineForBooking.name}</span>
-                <span className="font-bold text-sky-700">₹{selectedMachineForBooking.rentalPricePerAcre} / acre</span>
+      {/* 3. VIEW DETAILS MODAL */}
+      {detailsMachine && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 text-2xl flex items-center justify-center">
+                  🚜
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {detailsMachine.availability}
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900 font-display mt-0.5">
+                    {detailsMachine.name}
+                  </h3>
+                  <p className="text-xs font-bold text-slate-500 font-mono">
+                    Model: {detailsMachine.modelNumber}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-slate-500">{selectedMachineForBooking.provider} • {selectedMachineForBooking.location}</p>
+
+              <button
+                onClick={() => setDetailsMachine(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Specs Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Owner</div>
+                <div className="font-black text-slate-900 mt-0.5">{detailsMachine.ownerName}</div>
+                <div className="text-[11px] text-slate-500">{detailsMachine.phone}</div>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Location</div>
+                <div className="font-black text-slate-900 mt-0.5">{detailsMachine.location}</div>
+                <div className="text-[11px] text-emerald-700 font-bold">Verified Provider ✓</div>
+              </div>
+
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                <div className="text-[10px] font-bold uppercase text-emerald-800">Rent per Acre</div>
+                <div className="text-base font-black text-emerald-900 mt-0.5">
+                  ₹{detailsMachine.rentPerAcre} / Acre
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                <div className="text-[10px] font-bold uppercase text-emerald-800">Rent per Hectare</div>
+                <div className="text-base font-black text-emerald-900 mt-0.5">
+                  ₹{detailsMachine.rentPerHectare} / Hectare
+                </div>
+              </div>
+            </div>
+
+            {/* Suitable Operations */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+              <div className="text-[10px] font-bold uppercase text-slate-500">Suitable Operations & Features:</div>
+              <div className="flex flex-wrap gap-1">
+                {(detailsMachine.suitableFor || ["Tillage", "Harvesting", "Spraying"]).map((s, idx) => (
+                  <span key={idx} className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 font-semibold text-[11px]">
+                    ✓ {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <a
+                href={`tel:${detailsMachine.phone}`}
+                className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 font-black text-xs flex items-center justify-center gap-1.5"
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Call Owner</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  const m = detailsMachine;
+                  setDetailsMachine(null);
+                  setRentMachine(m);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-700/30"
+              >
+                <span>Rent This Machine</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. RENT NOW MODAL */}
+      {rentMachine && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full p-6 sm:p-7 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🤝</span>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 font-display">
+                    Rent {rentMachine.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Owner: {rentMachine.ownerName} ({rentMachine.modelNumber})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setRentMachine(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmRent} className="space-y-4">
+              {/* Field Acreage */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Acreage to Work *
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Farm Area to Work (Acres) *
                 </label>
                 <input
                   type="number"
                   step="0.5"
                   required
-                  value={bookingForm.acreage}
-                  onChange={(e) => setBookingForm({ ...bookingForm, acreage: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
+                  min="0.5"
+                  value={rentForm.acres}
+                  onChange={(e) => setRentForm({ ...rentForm, acres: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 font-mono"
                 />
               </div>
 
+              {/* Booking Date */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Preferred Date *
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
+                  Required Date *
                 </label>
                 <input
                   type="date"
                   required
-                  value={bookingForm.bookingDate}
-                  onChange={(e) => setBookingForm({ ...bookingForm, bookingDate: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
+                  value={rentForm.bookingDate}
+                  onChange={(e) => setRentForm({ ...rentForm, bookingDate: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Contact Phone *
-              </label>
-              <input
-                type="text"
-                required
-                value={bookingForm.contactPhone}
-                onChange={(e) => setBookingForm({ ...bookingForm, contactPhone: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
-              />
-            </div>
+              {/* Total Calculation Preview */}
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase text-emerald-800">
+                    Rate: ₹{rentMachine.rentPerAcre} / Acre
+                  </div>
+                  <div className="text-xs text-emerald-700 font-bold mt-0.5">
+                    For {rentForm.acres || 0} Acre(s)
+                  </div>
+                </div>
 
-            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs font-bold text-emerald-900">
-              <span>Estimated Total Rental Cost:</span>
-              <span className="text-sm">
-                ₹{(parseFloat(bookingForm.acreage || 1) * selectedMachineForBooking.rentalPricePerAcre).toLocaleString('en-IN')}
-              </span>
-            </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-black uppercase text-emerald-800">Estimated Total</div>
+                  <div className="text-lg font-black text-emerald-900 font-display">
+                    ₹{Math.round(rentMachine.rentPerAcre * (parseFloat(rentForm.acres) || 0)).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setBookingModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={bookingSubmitted}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-md transition-all flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>{bookingSubmitted ? "Confirming..." : "Confirm Machinery Booking"}</span>
-              </button>
-            </div>
-          </form>
-        )}
-      </Modal>
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRentMachine(null)}
+                  className="py-3 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submittingRent}
+                  className="py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-700/30"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{submittingRent ? "Booking..." : "Confirm Rental"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
