@@ -50,38 +50,7 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
 
   return (
     <aside className={containerClasses}>
-      <div className="space-y-6">
-        {/* User Role Card */}
-        <div className={`p-4 rounded-2xl border ${isFarmer ? "bg-agri-50/70 border-agri-200 text-agri-900" : "bg-amber-50/70 border-amber-200 text-amber-900"}`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-sm ${isFarmer ? "agri-gradient" : "harvest-gradient"}`}>
-              {isFarmer ? "🌾" : "🛠️"}
-            </div>
-            <div className="overflow-hidden">
-              <h4 className="font-bold text-sm truncate font-display text-slate-900">{user?.name || (isFarmer ? t("auth.farmerPortalTitle") : t("auth.labourPortalTitle"))}</h4>
-              <p className="text-[11px] font-semibold tracking-wide text-slate-500">
-                {isFarmer ? t("auth.farmerPortalTitle") : t("auth.labourPortalTitle")}
-              </p>
-            </div>
-          </div>
-          {isFarmer && user?.farm && (
-            <div className="mt-3 pt-2.5 border-t border-agri-200/60 text-[11px] text-slate-600 flex items-center justify-between">
-              <span className="font-semibold">{user.farm.primaryCrop}</span>
-              <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-agri-800 border border-agri-200">
-                {user.farm.sizeAcres} {t("common.acres")}
-              </span>
-            </div>
-          )}
-          {isLabour && (
-            <div className="mt-3 pt-2.5 border-t border-amber-200/60 text-[11px] text-slate-600 flex items-center justify-between">
-              <span className="font-semibold">{user?.availability || t("common.immediate")}</span>
-              <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-amber-800 border border-amber-200">
-                ₹{user?.expectedDailyWage || 450}{t("common.perDay")}
-              </span>
-            </div>
-          )}
-        </div>
-
+      <div className="space-y-4">
         {/* Navigation Links */}
         <nav className="space-y-1">
           <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
