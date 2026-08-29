@@ -2,6 +2,102 @@ import { store } from "../models/store.js";
 
 export class MarketService {
   /**
+   * Evaluates the Market Scheme comparison flow requested:
+   * Location -> Money Needed -> Compare Market Prices -> Best Option -> Conclusion
+   */
+  static compareMarketScheme({ crop = "Wheat", location = "Ahmednagar", moneyNeeded = 50000 }) {
+    const targetMoney = parseFloat(moneyNeeded) || 50000;
+    const cropName = (crop || "Wheat").trim();
+    const locName = (location || "Ahmednagar").trim().toLowerCase();
+
+    // Base rates benchmark for realistic agricultural crops in Maharashtra APMCs
+    const cropBaseRates = {
+      "Wheat": { ahmednagar: 2500, pune: 2800, nashik: 2650, lasalgaon: 2580, solapur: 2700 },
+      "Soybean": { ahmednagar: 4750, pune: 4900, nashik: 4650, lasalgaon: 4620, solapur: 4720 },
+      "Onion": { ahmednagar: 2200, pune: 2600, nashik: 2450, lasalgaon: 2350, solapur: 2150 },
+      "Cotton": { ahmednagar: 7300, pune: 7600, nashik: 7400, lasalgaon: 7250, solapur: 7450 },
+      "Tomato": { ahmednagar: 1800, pune: 2200, nashik: 2050, lasalgaon: 1950, solapur: 1900 },
+      "Maize": { ahmednagar: 2100, pune: 2350, nashik: 2200, lasalgaon: 2180, solapur: 2250 },
+      "Rice": { ahmednagar: 3200, pune: 3600, nashik: 3400, lasalgaon: 3300, solapur: 3350 },
+      "Gram": { ahmednagar: 5100, pune: 5400, nashik: 5250, lasalgaon: 5200, solapur: 5300 }
+    };
+
+    const rates = cropBaseRates[cropName] || cropBaseRates["Wheat"];
+
+    // Distance/Transport matrix depending on farmer's location
+    const getTransport = (mandiKey) => {
+      if (locName.includes("ahmednagar")) {
+        if (mandiKey === "ahmednagar") return 200;
+        if (mandiKey === "pune") return 700;
+        if (mandiKey === "nashik") return 450;
+        if (mandiKey === "lasalgaon") return 400;
+        return 800;
+      }
+      if (locName.includes("pune")) {
+        if (mandiKey === "pune") return 220;
+        if (mandiKey === "ahmednagar") return 650;
+        if (mandiKey === "nashik") return 750;
+        if (mandiKey === "lasalgaon") return 720;
+        return 600;
+      }
+      // Default / Nashik area
+      if (mandiKey === "nashik") return 200;
+      if (mandiKey === "lasalgaon") return 250;
+      if (mandiKey === "ahmednagar") return 420;
+      if (mandiKey === "pune") return 680;
+      return 850;
+    };
+
+    const mandisList = [
+      { id: "m-1", key: "ahmednagar", name: "Ahmednagar", pricePerQtl: rates.ahmednagar, transport: getTransport("ahmednagar") },
+      { id: "m-2", key: "pune", name: "Pune", pricePerQtl: rates.pune, transport: getTransport("pune") },
+      { id: "m-3", key: "nashik", name: "Nashik", pricePerQtl: rates.nashik, transport: getTransport("nashik") },
+      { id: "m-4", key: "lasalgaon", name: "Lasalgaon", pricePerQtl: rates.lasalgaon, transport: getTransport("lasalgaon") }
+    ];
+
+    const processed = mandisList.map(m => {
+      const netPerQtl = m.pricePerQtl - m.transport;
+      const quintalsToSell = Math.ceil(targetMoney / Math.max(netPerQtl, 1));
+      const totalGross = quintalsToSell * m.pricePerQtl;
+      const totalTransport = quintalsToSell * m.transport;
+      const netRevenue = totalGross - totalTransport;
+
+      return {
+        ...m,
+        netPricePerQtl: netPerQtl,
+        quintalsNeeded: quintalsToSell,
+        totalGross,
+        totalTransport,
+        netRevenue
+      };
+    });
+
+    // Sort by Net Price / Q descending
+    const sorted = [...processed].sort((a, b) => b.netPricePerQtl - a.netPricePerQtl);
+    const bestMandi = sorted[0];
+    const lowestMandi = sorted[sorted.length - 1];
+    const netAdvantagePerQtl = bestMandi.netPricePerQtl - lowestMandi.netPricePerQtl;
+
+    return {
+      crop: cropName,
+      location: location || "Ahmednagar",
+      moneyNeeded: targetMoney,
+      comparison: sorted,
+      bestOption: {
+        mandi: bestMandi.name,
+        badge: `★ ${bestMandi.name.toUpperCase()} ★`,
+        netPricePerQtl: bestMandi.netPricePerQtl,
+        pricePerQtl: bestMandi.pricePerQtl,
+        transport: bestMandi.transport,
+        quintalsNeeded: bestMandi.quintalsNeeded,
+        netAdvantagePerQtl: netAdvantagePerQtl,
+        totalSavings: netAdvantagePerQtl * bestMandi.quintalsNeeded
+      },
+      conclusion: `Based on crop price (₹${bestMandi.pricePerQtl.toLocaleString('en-IN')}/Q), transport cost (₹${bestMandi.transport}/Q), location (${location || 'Ahmednagar'}) and money needed (₹${targetMoney.toLocaleString('en-IN')}), the system recommends ${bestMandi.name} as the most profitable market with the highest net realization of ₹${bestMandi.netPricePerQtl.toLocaleString('en-IN')}/Quintal.`
+    };
+  }
+
+  /**
    * Compares prices across multiple Mandis for a given crop
    * Includes transport cost estimation & realistic net profit calculation
    */

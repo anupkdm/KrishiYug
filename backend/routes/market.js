@@ -38,7 +38,11 @@ router.get("/history", (req, res) => {
 router.get("/prediction", (req, res) => {
   const { crop = "Soybean" } = req.query;
   const prediction = MarketService.getPricePrediction(crop);
-  res.json(prediction);
+// POST / GET Market Scheme Comparison (Location -> Money Needed -> Compare -> Best Option -> Conclusion)
+router.all("/scheme-compare", (req, res) => {
+  const { crop = "Wheat", location = "Ahmednagar", moneyNeeded = 50000 } = { ...req.query, ...req.body };
+  const result = MarketService.compareMarketScheme({ crop, location, moneyNeeded });
+  res.json(result);
 });
 
 export default router;

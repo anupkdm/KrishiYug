@@ -349,6 +349,10 @@ class ApiService {
     return this.request(`/market/comparison${qs ? `?${qs}` : ''}`);
   }
 
+  compareMarketScheme(payload) {
+    return this.request("/market/scheme-compare", { method: "POST", body: JSON.stringify(payload) });
+  }
+
   getHistoricalMarketTrends() {
     return this.request("/market/history");
   }

@@ -344,7 +344,88 @@ export default async function handler(req, res) {
       return res.status(200).json({ requests });
     }
 
-    // 9. Static Seed Handlers
+    // 9. Market Scheme Comparison
+    if (path.includes("/market/scheme-compare") || path.includes("/market/comparison")) {
+      const crop = body.crop || "Wheat";
+      const location = body.location || "Ahmednagar";
+      const moneyNeeded = parseFloat(body.moneyNeeded) || 50000;
+
+      const cropBaseRates = {
+        "Wheat": { ahmednagar: 2500, pune: 2800, nashik: 2650, lasalgaon: 2580 },
+        "Soybean": { ahmednagar: 4750, pune: 4900, nashik: 4650, lasalgaon: 4620 },
+        "Onion": { ahmednagar: 2200, pune: 2600, nashik: 2450, lasalgaon: 2350 },
+        "Cotton": { ahmednagar: 7300, pune: 7600, nashik: 7400, lasalgaon: 7250 },
+        "Tomato": { ahmednagar: 1800, pune: 2200, nashik: 2050, lasalgaon: 1950 },
+        "Maize": { ahmednagar: 2100, pune: 2350, nashik: 2200, lasalgaon: 2180 },
+        "Rice": { ahmednagar: 3200, pune: 3600, nashik: 3400, lasalgaon: 3300 },
+        "Gram": { ahmednagar: 5100, pune: 5400, nashik: 5250, lasalgaon: 5200 }
+      };
+
+      const rates = cropBaseRates[crop] || cropBaseRates["Wheat"];
+      const locLower = (location || "").toLowerCase();
+
+      const getTransport = (mandiKey) => {
+        if (locLower.includes("ahmednagar")) {
+          if (mandiKey === "ahmednagar") return 200;
+          if (mandiKey === "pune") return 700;
+          if (mandiKey === "nashik") return 450;
+          return 400;
+        }
+        if (locLower.includes("pune")) {
+          if (mandiKey === "pune") return 220;
+          if (mandiKey === "ahmednagar") return 650;
+          if (mandiKey === "nashik") return 750;
+          return 720;
+        }
+        if (mandiKey === "nashik") return 200;
+        if (mandiKey === "lasalgaon") return 250;
+        if (mandiKey === "ahmednagar") return 420;
+        return 680;
+      };
+
+      const mandisList = [
+        { id: "m-1", key: "ahmednagar", name: "Ahmednagar", pricePerQtl: rates.ahmednagar, transport: getTransport("ahmednagar") },
+        { id: "m-2", key: "pune", name: "Pune", pricePerQtl: rates.pune, transport: getTransport("pune") },
+        { id: "m-3", key: "nashik", name: "Nashik", pricePerQtl: rates.nashik, transport: getTransport("nashik") },
+        { id: "m-4", key: "lasalgaon", name: "Lasalgaon", pricePerQtl: rates.lasalgaon, transport: getTransport("lasalgaon") }
+      ];
+
+      const processed = mandisList.map(m => {
+        const netPerQtl = m.pricePerQtl - m.transport;
+        const quintalsToSell = Math.ceil(moneyNeeded / Math.max(netPerQtl, 1));
+        return {
+          ...m,
+          netPricePerQtl: netPerQtl,
+          quintalsNeeded: quintalsToSell,
+          totalGross: quintalsToSell * m.pricePerQtl,
+          totalTransport: quintalsToSell * m.transport,
+          netRevenue: (quintalsToSell * m.pricePerQtl) - (quintalsToSell * m.transport)
+        };
+      });
+
+      const sorted = [...processed].sort((a, b) => b.netPricePerQtl - a.netPricePerQtl);
+      const best = sorted[0];
+      const lowest = sorted[sorted.length - 1];
+
+      return res.status(200).json({
+        crop,
+        location,
+        moneyNeeded,
+        comparison: sorted,
+        bestOption: {
+          mandi: best.name,
+          badge: `★ ${best.name.toUpperCase()} ★`,
+          netPricePerQtl: best.netPricePerQtl,
+          pricePerQtl: best.pricePerQtl,
+          transport: best.transport,
+          quintalsNeeded: best.quintalsNeeded,
+          netAdvantagePerQtl: best.netPricePerQtl - lowest.netPricePerQtl
+        },
+        conclusion: `Based on crop price (₹${best.pricePerQtl.toLocaleString('en-IN')}/Q), transport cost (₹${best.transport}/Q), location (${location}) and money needed (₹${moneyNeeded.toLocaleString('en-IN')}), the system recommends ${best.name} as the most profitable market with the highest net realization of ₹${best.netPricePerQtl.toLocaleString('en-IN')}/Quintal.`
+      });
+    }
+
+    // 10. Static Seed Handlers
     if (path.includes("/market/prices")) return res.status(200).json({ marketPrices: SEED_DATA.marketPrices });
     if (path.includes("/schemes")) return res.status(200).json({ schemes: SEED_DATA.schemes });
     if (path.includes("/machinery")) return res.status(200).json({ machinery: SEED_DATA.machinery });
