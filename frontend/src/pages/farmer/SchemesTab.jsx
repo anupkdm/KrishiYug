@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { api } from "../../services/api";
 import { 
   Landmark, 
@@ -21,6 +22,7 @@ import confetti from "canvas-confetti";
 
 export const SchemesTab = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterState, setFilterState] = useState("All");
   const [selectedBox, setSelectedBox] = useState(null);
@@ -296,11 +298,11 @@ export const SchemesTab = () => {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🏛️</span>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight font-display">
-              GOVERNMENT SCHEME
+              {t("schemes.title", "GOVERNMENT SCHEME")}
             </h1>
           </div>
           <p className="text-sm font-semibold text-slate-600 mt-1">
-            Central & State Welfare Schemes, Direct Benefit Transfers & Subsidies for Farmers
+            {t("schemes.subtitle", "Central & State Welfare Schemes, Direct Benefit Transfers & Subsidies for Farmers")}
           </p>
         </div>
 
@@ -311,7 +313,7 @@ export const SchemesTab = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
-              placeholder="🔍 Search schemes..."
+              placeholder={t("schemes.searchPlaceholder", "🔍 Search schemes...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold bg-slate-50"
@@ -333,10 +335,10 @@ export const SchemesTab = () => {
               onChange={(e) => setFilterState(e.target.value)}
               className="px-4 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
             >
-              <option value="All">⚙ Filter: All Categories</option>
-              <option value="Central">Central Govt Schemes</option>
-              <option value="Subsidies">High Subsidies (50%+)</option>
-              <option value="Direct">Direct Cash Transfers (DBT)</option>
+              <option value="All">{t("schemes.filterAll", "⚙ Filter: All Categories")}</option>
+              <option value="Central">{t("schemes.filterCentral", "Central Govt Schemes")}</option>
+              <option value="Subsidies">{t("schemes.filterSubsidies", "High Subsidies (50%+)")}</option>
+              <option value="Direct">{t("schemes.filterDirect", "Direct Cash Transfers (DBT)")}</option>
             </select>
           </div>
         </div>
@@ -344,69 +346,72 @@ export const SchemesTab = () => {
 
       {/* 2. EXACT 3x3 GRID (9 BOXES TOTAL, 3 BOXES PER ROW) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {filteredBoxes.map((box) => (
-          <div
-            key={box.id}
-            onClick={() => handleOpenModal(box)}
-            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-emerald-400 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
-          >
-            {/* Top Accent Line */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 group-hover:h-2 transition-all" />
+        {filteredBoxes.map((box) => {
+          const localizedTitle = t(`schemes.box${box.id}`, box.title);
+          return (
+            <div
+              key={box.id}
+              onClick={() => handleOpenModal(box)}
+              className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-emerald-400 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+            >
+              {/* Top Accent Line */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 group-hover:h-2 transition-all" />
 
-            <div>
-              {/* Card Header: Number, Icon, Title, Badge */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-900 font-black text-2xl flex items-center justify-center shadow-inner border border-emerald-100 shrink-0 group-hover:scale-105 transition-transform">
-                    {box.icon}
+              <div>
+                {/* Card Header: Number, Icon, Title, Badge */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-900 font-black text-2xl flex items-center justify-center shadow-inner border border-emerald-100 shrink-0 group-hover:scale-105 transition-transform">
+                      {box.icon}
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                        {t("schemes.boxLabel", "Box")} {box.number}
+                      </span>
+                      <h2 className="text-base font-black text-slate-900 font-display mt-1 leading-snug group-hover:text-emerald-800 transition-colors">
+                        {box.number}. {localizedTitle}
+                      </h2>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
-                      Box {box.number}
-                    </span>
-                    <h2 className="text-base font-black text-slate-900 font-display mt-1 leading-snug group-hover:text-emerald-800 transition-colors">
-                      {box.number}. {box.title}
-                    </h2>
+                </div>
+
+                {/* Short Description */}
+                <p className="text-xs font-medium text-slate-600 leading-relaxed mt-2 line-clamp-2">
+                  {box.shortDesc}
+                </p>
+
+                {/* Schemes Preview Tags */}
+                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {t("schemes.includedPrograms", "Included Programs")}:
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {box.schemes.map((s, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 line-clamp-1"
+                      >
+                        {s.name.split("(")[0]}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Short Description */}
-              <p className="text-xs font-medium text-slate-600 leading-relaxed mt-2 line-clamp-2">
-                {box.shortDesc}
-              </p>
+              {/* Card Footer: Benefit Badge & Action Button */}
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  ⭐ {box.badge}
+                </span>
 
-              {/* Schemes Preview Tags */}
-              <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Included Programs:
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {box.schemes.map((s, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 line-clamp-1"
-                    >
-                      {s.name.split("(")[0]}
-                    </span>
-                  ))}
-                </div>
+                <button className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 flex items-center gap-1 group-hover:translate-x-1 transition-all">
+                  <span>{t("schemes.viewAndApply", "View & Apply")}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
-
-            {/* Card Footer: Benefit Badge & Action Button */}
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                ⭐ {box.badge}
-              </span>
-
-              <button className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 flex items-center gap-1 group-hover:translate-x-1 transition-all">
-                <span>View & Apply</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 3. DETAILED SCHEMES MODAL & OFFICIAL APPLICATION PORTAL */}
@@ -421,10 +426,10 @@ export const SchemesTab = () => {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                    Category {selectedBox.number}
+                    {t("schemes.categoryLabel", "Category")} {selectedBox.number}
                   </span>
                   <h3 className="text-xl font-black text-slate-900 font-display mt-0.5">
-                    {selectedBox.title}
+                    {t(`schemes.box${selectedBox.id}`, selectedBox.title)}
                   </h3>
                 </div>
               </div>
@@ -455,13 +460,13 @@ export const SchemesTab = () => {
                     </div>
 
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
-                      Verified Scheme
+                      {t("schemes.verifiedScheme", "Verified Scheme")}
                     </span>
                   </div>
 
                   {/* Financial Benefit */}
                   <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
-                    <strong className="font-black">💰 Financial Benefit / Subsidy:</strong>
+                    <strong className="font-black">💰 {t("schemes.financialBenefit", "Financial Benefit / Subsidy")}:</strong>
                     <div className="mt-0.5 font-semibold leading-relaxed">
                       {scheme.benefit}
                     </div>
@@ -470,14 +475,14 @@ export const SchemesTab = () => {
                   {/* Eligibility & Documents */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="text-[10px] font-black uppercase text-slate-400">Eligibility</div>
+                      <div className="text-[10px] font-black uppercase text-slate-400">{t("schemes.eligibility", "Eligibility")}</div>
                       <p className="text-slate-700 font-medium mt-0.5 leading-relaxed">
                         {scheme.eligibility}
                       </p>
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="text-[10px] font-black uppercase text-slate-400">Required Documents</div>
+                      <div className="text-[10px] font-black uppercase text-slate-400">{t("schemes.requiredDocs", "Required Documents")}</div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {scheme.documents.map((doc, dIdx) => (
                           <span key={dIdx} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
@@ -496,7 +501,7 @@ export const SchemesTab = () => {
                       rel="noopener noreferrer"
                       className="text-xs font-black text-emerald-700 hover:text-emerald-800 flex items-center gap-1.5 underline"
                     >
-                      <span>Official Portal ({new URL(scheme.portalUrl).hostname})</span>
+                      <span>{t("schemes.officialPortal", "Official Portal")} ({new URL(scheme.portalUrl).hostname})</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
 
@@ -511,10 +516,10 @@ export const SchemesTab = () => {
                       {appliedSchemes[scheme.name] ? (
                         <>
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                          <span>Application Initiated ✓</span>
+                          <span>{t("schemes.appliedBtn", "Application Initiated ✓")}</span>
                         </>
                       ) : (
-                        <span>Apply / Check Eligibility →</span>
+                        <span>{t("schemes.applyBtn", "Apply / Check Eligibility →")}</span>
                       )}
                     </button>
                   </div>
@@ -528,7 +533,7 @@ export const SchemesTab = () => {
                 onClick={() => setModalOpen(false)}
                 className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs"
               >
-                Close
+                {t("schemes.close", "Close")}
               </button>
             </div>
           </div>

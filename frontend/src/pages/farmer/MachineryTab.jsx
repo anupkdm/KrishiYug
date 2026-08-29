@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { api } from "../../services/api";
 import { 
   Tractor, 
@@ -24,6 +25,7 @@ import confetti from "canvas-confetti";
 
 export const MachineryTab = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [activeMobileTab, setActiveMobileTab] = useState("rent"); // "rent" | "provide"
   
   // Search & Filter State (TO RENT)
@@ -271,11 +273,11 @@ export const MachineryTab = () => {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🚜</span>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight font-display">
-              MACHINE AVAILABILITY
+              {t("machinery.title", "MACHINE AVAILABILITY")}
             </h1>
           </div>
           <p className="text-sm font-semibold text-slate-600 mt-1">
-            Find, rent and provide agricultural machines
+            {t("machinery.subtitle", "Find, rent and provide agricultural machines")}
           </p>
         </div>
 
@@ -287,7 +289,7 @@ export const MachineryTab = () => {
               activeMobileTab === "rent" ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600"
             }`}
           >
-            TO RENT ({filteredMachines.length})
+            {t("machinery.toRent", "TO RENT")} ({filteredMachines.length})
           </button>
           <button
             onClick={() => setActiveMobileTab("provide")}
@@ -295,7 +297,7 @@ export const MachineryTab = () => {
               activeMobileTab === "provide" ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600"
             }`}
           >
-            ➕ PROVIDE
+            ➕ {t("machinery.provide", "PROVIDE")}
           </button>
         </div>
       </div>
@@ -331,23 +333,23 @@ export const MachineryTab = () => {
               <div className="flex items-center gap-2">
                 <span className="text-lg">🚜</span>
                 <h2 className="text-lg font-black text-slate-900 font-display">
-                  TO RENT
+                  {t("machinery.toRent", "TO RENT")}
                 </h2>
               </div>
               <span className="text-xs font-bold text-slate-500">
-                {filteredMachines.length} Machines Available
+                {filteredMachines.length} {t("machinery.available", "Available")}
               </span>
             </div>
 
             {/* 🔍 Search Machines */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500">
-                🔍 Search Machines
+                🔍 {t("machinery.searchLabel", "Search Machines")}
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search machine name, model or owner (e.g. Tractor, Mahindra, Rahul)..."
+                  placeholder={t("machinery.searchPlaceholder", "Search machine name, model or owner (e.g. Tractor, Mahindra, Rahul)...")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-4 pr-10 py-2.5 rounded-2xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-slate-50"
@@ -360,7 +362,7 @@ export const MachineryTab = () => {
             <div className="space-y-1.5 pt-1">
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
                 <Filter className="w-3 h-3 text-slate-400" />
-                <span>⚙ Filter</span>
+                <span>⚙ {t("machinery.filterLabel", "Filter")}</span>
               </label>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -370,7 +372,7 @@ export const MachineryTab = () => {
                   onChange={(e) => setFilterType(e.target.value)}
                   className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
                 >
-                  <option value="All">Machine Type ▼ (All)</option>
+                  <option value="All">{t("machinery.typeAll", "Machine Type ▼ (All)")}</option>
                   <option value="Tractor">Tractor</option>
                   <option value="Rotavator">Rotavator</option>
                   <option value="Harvester">Harvester</option>
@@ -384,7 +386,7 @@ export const MachineryTab = () => {
                   onChange={(e) => setFilterLocation(e.target.value)}
                   className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
                 >
-                  <option value="All">Location ▼ (All)</option>
+                  <option value="All">{t("machinery.locationAll", "Location ▼ (All)")}</option>
                   <option value="Niphad">Niphad</option>
                   <option value="Lasalgaon">Lasalgaon</option>
                   <option value="Nashik">Nashik</option>
@@ -398,7 +400,7 @@ export const MachineryTab = () => {
                   onChange={(e) => setFilterRentRange(e.target.value)}
                   className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-700"
                 >
-                  <option value="All">Rent Range ▼ (All)</option>
+                  <option value="All">{t("machinery.rentRangeAll", "Rent Range ▼ (All)")}</option>
                   <option value="800">Up to ₹800/Acre</option>
                   <option value="1200">Up to ₹1,200/Acre</option>
                   <option value="2000">Up to ₹2,000/Acre</option>
@@ -451,31 +453,31 @@ export const MachineryTab = () => {
 
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>{machine.availability}</span>
+                      <span>{machine.availability === "Available" ? t("machinery.available", "Available") : t("machinery.notAvailable", "Not Available")}</span>
                     </span>
                   </div>
 
                   {/* Machine Details Table/List */}
                   <div className="bg-slate-50/80 rounded-2xl p-3.5 border border-slate-200/80 text-xs space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Owner:</span>
+                      <span className="font-bold text-slate-500">{t("machinery.owner", "Owner")}:</span>
                       <span className="font-black text-slate-900">{machine.ownerName}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Model No.:</span>
+                      <span className="font-bold text-slate-500">{t("machinery.modelNo", "Model No.")}:</span>
                       <span className="font-bold text-slate-800 font-mono">{machine.modelNumber}</span>
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
-                      <span className="font-bold text-slate-500">Rent / Acre:</span>
+                      <span className="font-bold text-slate-500">{t("machinery.rentPerAcre", "Rent / Acre")}:</span>
                       <span className="font-black text-emerald-700 text-sm">
-                        ₹{machine.rentPerAcre?.toLocaleString('en-IN')} / Acre
+                        ₹{machine.rentPerAcre?.toLocaleString('en-IN')} / {t("common.acres", "Acre")}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Rent / Hectare:</span>
+                      <span className="font-bold text-slate-500">{t("machinery.rentPerHectare", "Rent / Hectare")}:</span>
                       <span className="font-bold text-slate-700">
                         ₹{machine.rentPerHectare?.toLocaleString('en-IN')} / Hectare
                       </span>
@@ -489,7 +491,7 @@ export const MachineryTab = () => {
                       className="py-2.5 px-4 rounded-xl border border-slate-300 hover:border-emerald-600 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-black text-xs transition-all flex items-center justify-center gap-1.5"
                     >
                       <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>View Details</span>
+                      <span>{t("machinery.viewDetails", "View Details")}</span>
                     </button>
 
                     <button
@@ -499,7 +501,7 @@ export const MachineryTab = () => {
                       }}
                       className="py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-700/30 hover:scale-[1.02]"
                     >
-                      <span>Rent Now</span>
+                      <span>{t("machinery.rentNow", "Rent Now")}</span>
                       <span>→</span>
                     </button>
                   </div>
@@ -518,16 +520,16 @@ export const MachineryTab = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xl">➕</span>
                 <h2 className="text-lg font-black text-slate-900 font-display">
-                  Provide Your Machine
+                  {t("machinery.provideTitle", "Provide Your Machine")}
                 </h2>
               </div>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                Rent Out
+                {t("machinery.provide", "Rent Out")}
               </span>
             </div>
 
             <p className="text-xs font-semibold text-slate-500 leading-relaxed">
-              Earn rental income by registering your tractor, harvester, rotavator, or drone for neighboring farmers.
+              {t("machinery.provideSubtitle", "Earn rental income by registering your tractor, harvester, rotavator, or drone for neighboring farmers.")}
             </p>
 
             {/* Registration Form */}
@@ -535,7 +537,7 @@ export const MachineryTab = () => {
               {/* Machine Name */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                  Machine Name *
+                  {t("machinery.machineName", "Machine Name")} *
                 </label>
                 <select
                   value={provideForm.name}
@@ -558,7 +560,7 @@ export const MachineryTab = () => {
               {/* Owner Name */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                  Owner Name *
+                  {t("machinery.ownerName", "Owner Name")} *
                 </label>
                 <input
                   type="text"
@@ -573,7 +575,7 @@ export const MachineryTab = () => {
               {/* Model Number */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                  Model No. *
+                  {t("machinery.modelNo", "Model No.")} *
                 </label>
                 <input
                   type="text"
@@ -589,7 +591,7 @@ export const MachineryTab = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                    Rent / Acre (₹) *
+                    {t("machinery.rentPerAcre", "Rent / Acre")} (₹) *
                   </label>
                   <input
                     type="number"
@@ -603,7 +605,7 @@ export const MachineryTab = () => {
 
                 <div>
                   <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                    Rent / Hectare (₹)
+                    {t("machinery.rentPerHectare", "Rent / Hectare")} (₹)
                   </label>
                   <input
                     type="number"
@@ -618,7 +620,7 @@ export const MachineryTab = () => {
               {/* Availability Radio Option */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                  Availability *
+                  {t("machinery.availability", "Availability")} *
                 </label>
                 <div className="flex items-center gap-4 pt-1">
                   <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
@@ -630,7 +632,7 @@ export const MachineryTab = () => {
                       onChange={(e) => setProvideForm({ ...provideForm, availability: e.target.value })}
                       className="text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span>🟢 Available</span>
+                    <span>🟢 {t("machinery.available", "Available")}</span>
                   </label>
 
                   <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
@@ -642,7 +644,7 @@ export const MachineryTab = () => {
                       onChange={(e) => setProvideForm({ ...provideForm, availability: e.target.value })}
                       className="text-rose-600 focus:ring-rose-500"
                     />
-                    <span>🔴 Not Available</span>
+                    <span>🔴 {t("machinery.notAvailable", "Not Available")}</span>
                   </label>
                 </div>
               </div>
@@ -650,7 +652,7 @@ export const MachineryTab = () => {
               {/* Location */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1">
-                  Location (Village, District) *
+                  {t("machinery.location", "Location (Village, District)")} *
                 </label>
                 <input
                   type="text"
@@ -669,7 +671,7 @@ export const MachineryTab = () => {
                 className="w-full py-3.5 px-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow-md shadow-emerald-700/30 transition-all flex items-center justify-center gap-2 mt-2 hover:scale-[1.01]"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>{submittingProvide ? "Adding..." : "+ ADD MACHINE"}</span>
+                <span>{submittingProvide ? t("machinery.addingMachine", "Adding...") : t("machinery.addMachineBtn", "+ ADD MACHINE")}</span>
               </button>
             </form>
           </div>

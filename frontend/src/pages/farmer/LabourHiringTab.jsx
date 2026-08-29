@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { api } from "../../services/api";
 import { 
   Users, 
@@ -22,6 +23,7 @@ import confetti from "canvas-confetti";
 
 export const LabourHiringTab = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [labourers, setLabourers] = useState([]);
   const [hiringRequests, setHiringRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,12 +51,12 @@ export const LabourHiringTab = () => {
   const farmerDistrict = user?.location?.district || "Nashik";
 
   const ROLE_FILTERS = [
-    { id: "All", label: "All Workers", icon: "👥" },
-    { id: "Harvesting", label: "Harvesting", icon: "🌾" },
-    { id: "Planting", label: "Planting / Sowing", icon: "🌱" },
-    { id: "Spraying", label: "Spraying", icon: "🚿" },
-    { id: "Weeding", label: "Weeding", icon: "🌿" },
-    { id: "Farm Helper", label: "Farm Helper", icon: "🧑‍🌾" }
+    { id: "All", label: t("labour.allWorkers", "All Workers"), icon: "👥" },
+    { id: "Harvesting", label: t("labour.harvesting", "Harvesting"), icon: "🌾" },
+    { id: "Planting", label: t("labour.planting", "Planting / Sowing"), icon: "🌱" },
+    { id: "Spraying", label: t("labour.spraying", "Spraying"), icon: "🚿" },
+    { id: "Weeding", label: t("labour.weeding", "Weeding"), icon: "🌿" },
+    { id: "Farm Helper", label: t("labour.helper", "Farm Helper"), icon: "🧑‍🌾" }
   ];
 
   const WORK_TYPES = [
@@ -167,11 +169,11 @@ export const LabourHiringTab = () => {
           <div className="flex items-center gap-2">
             <span className="text-2xl">👷</span>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight font-display">
-              FARM LABOUR
+              {t("labour.title", "FARM LABOUR")}
             </h1>
           </div>
           <p className="text-sm font-semibold text-slate-600 mt-1">
-            Find available workers near your farm
+            {t("labour.subtitle", "Find available workers near your farm")}
           </p>
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 mt-2 w-fit">
             <MapPin className="w-3.5 h-3.5 text-emerald-600" />
@@ -189,7 +191,7 @@ export const LabourHiringTab = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Find Workers ({filteredLabourers.length})
+            {t("labour.findWorkers", "Find Workers")} ({filteredLabourers.length})
           </button>
 
           <button
@@ -200,7 +202,7 @@ export const LabourHiringTab = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <span>My Hiring Requests</span>
+            <span>{t("labour.myRequests", "My Hiring Requests")}</span>
             {hiringRequests.length > 0 && (
               <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-900 text-[10px] font-black flex items-center justify-center">
                 {hiringRequests.length}
@@ -236,7 +238,7 @@ export const LabourHiringTab = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
               <input
                 type="text"
-                placeholder="🔍 Search by name / village / role (e.g. Ramesh, Niphad, Harvesting)..."
+                placeholder={t("labour.searchPlaceholder", "🔍 Search by name / village / role (e.g. Ramesh, Niphad, Harvesting)...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium bg-slate-50/70"
@@ -246,7 +248,7 @@ export const LabourHiringTab = () => {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 text-xs font-bold p-1"
                 >
-                  Clear
+                  ✕
                 </button>
               )}
             </div>
@@ -277,7 +279,7 @@ export const LabourHiringTab = () => {
           {loading ? (
             <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
               <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs font-bold text-slate-500">Loading available farm workers...</p>
+              <p className="text-xs font-bold text-slate-500">{t("common.loading", "Loading available farm workers...")}</p>
             </div>
           ) : filteredLabourers.length === 0 ? (
             <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
@@ -328,35 +330,35 @@ export const LabourHiringTab = () => {
                         {/* Availability Pill */}
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>🟢 {labour.availability || "Available"}</span>
+                          <span>🟢 {labour.availability || t("common.immediate", "Available")}</span>
                         </div>
                       </div>
 
                       {/* Card Details: Village, Phone, Role, Daily Wage */}
                       <div className="space-y-1.5 pt-2 pb-3 text-xs font-medium text-slate-700">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 w-24">📍 Village:</span>
+                          <span className="font-bold text-slate-900 w-24">📍 {t("labour.village", "Village")}:</span>
                           <span className="text-slate-800 font-semibold">{village}, {farmerDistrict}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 w-24">📞 Phone:</span>
+                          <span className="font-bold text-slate-900 w-24">📞 {t("labour.phone", "Phone")}:</span>
                           <span className="text-slate-800 font-mono font-bold tracking-wide">
                             {labour.phone ? labour.phone.slice(0, 8) + "XXXX" : "98765 XXXXX"}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 w-24">🧑‍🌾 Role:</span>
+                          <span className="font-bold text-slate-900 w-24">🧑‍🌾 {t("labour.role", "Role")}:</span>
                           <span className="text-emerald-900 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                             {roleDisplay}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 w-24">💰 Daily Wage:</span>
+                          <span className="font-bold text-slate-900 w-24">💰 {t("labour.dailyWage", "Daily Wage")}:</span>
                           <span className="text-emerald-700 font-black text-sm">
-                            ₹{wage}/day
+                            ₹{wage}{t("common.perDay", "/day")}
                           </span>
                         </div>
                       </div>
@@ -369,14 +371,14 @@ export const LabourHiringTab = () => {
                         className="w-full py-2.5 px-3 rounded-2xl border-2 border-slate-300 hover:border-emerald-600 hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
                         <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>📞 CONTACT</span>
+                        <span>📞 {t("labour.contact", "CONTACT")}</span>
                       </button>
 
                       <button
                         onClick={() => openHireModal(labour)}
                         className="w-full py-2.5 px-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-700/30 hover:scale-[1.02]"
                       >
-                        <span>🤝 HIRE</span>
+                        <span>🤝 {t("labour.hire", "HIRE")}</span>
                       </button>
                     </div>
                   </div>
