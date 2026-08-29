@@ -8,7 +8,6 @@ import {
   Landmark, 
   TrendingUp, 
   BrainCircuit, 
-  Bell, 
   UserCheck, 
   LogOut, 
   Briefcase, 
@@ -17,11 +16,9 @@ import {
   PhoneCall,
   ChevronRight
 } from "lucide-react";
-import { useSimulation } from "../../context/SimulationContext";
 
 export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
   const { isFarmer, isLabour, user, logout } = useAuth();
-  const { unreadCount } = useSimulation();
   const { t } = useLanguage();
 
   const farmerNavItems = [
@@ -31,7 +28,6 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
     { id: "machinery", label: t("nav.machinery"), icon: Tractor },
     { id: "schemes", label: t("nav.schemes"), icon: Landmark },
     { id: "ai-advisor", label: t("nav.farmAdvice"), icon: BrainCircuit },
-    { id: "notifications", label: t("nav.notifications"), icon: Bell, count: unreadCount },
     { id: "profile", label: t("nav.profile"), icon: UserCheck },
   ];
 
@@ -40,11 +36,11 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
     { id: "available-jobs", label: t("nav.availableJobs"), icon: Briefcase },
     { id: "my-applications", label: t("nav.myApplications"), icon: FileCheck2 },
     { id: "my-work", label: t("nav.workAndWages"), icon: Wallet },
-    { id: "notifications", label: t("nav.notifications"), icon: Bell, count: unreadCount },
     { id: "profile", label: t("nav.profile"), icon: UserCheck },
   ];
 
   const navItems = isFarmer ? farmerNavItems : labourNavItems;
+
 
   const containerClasses = isMobile
     ? "w-full flex flex-col justify-between p-4 min-h-full bg-white space-y-6"
@@ -86,12 +82,7 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
                   <span>{item.label}</span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  {item.count > 0 && (
-                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isActive ? "bg-white text-slate-900" : "bg-rose-500 text-white animate-pulse"}`}>
-                      {item.count}
-                    </span>
-                  )}
+                <div className="flex items-center">
                   {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/80" />}
                 </div>
               </button>

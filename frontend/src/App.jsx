@@ -28,7 +28,6 @@ import { MyWorkTab } from "./pages/labour/MyWorkTab";
 import { LabourProfileTab } from "./pages/labour/LabourProfileTab";
 
 // Shared Tabs
-import { NotificationsTab } from "./pages/NotificationsTab";
 import { PresentationMode } from "./pages/PresentationMode";
 
 const AppContent = () => {
@@ -135,8 +134,6 @@ const AppContent = () => {
         return <MarketIntelligenceTab />;
       case "ai-advisor":
         return <AIFarmAdvisorTab />;
-      case "notifications":
-        return <NotificationsTab />;
       case "profile":
         return <FarmerProfileTab />;
       default:
@@ -154,8 +151,6 @@ const AppContent = () => {
         return <MyApplicationsTab />;
       case "my-work":
         return <MyWorkTab />;
-      case "notifications":
-        return <NotificationsTab />;
       case "profile":
         return <LabourProfileTab />;
       default:
