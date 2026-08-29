@@ -80,14 +80,18 @@ import { connectDB } from "./config/db.js";
 
 const PORT = CONFIG.PORT;
 
-// Connect to MongoDB Atlas (or local fallback) and start server
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(`🌱 KRISHI INTELLIGENCE REST API SERVER STARTED`);
-    console.log(`🌾 Platform: One Platform. Smarter Farming. Better Decisions.`);
-    console.log(`🚀 Server running on: http://localhost:${PORT}`);
-    console.log(`📡 Simulation Engine: ACTIVE (${CONFIG.SIMULATION_TICK_SECONDS}s interval)`);
-    console.log(`=======================================================`);
+// If running directly (not in a serverless environment like Vercel)
+if (process.env.VERCEL !== "1" && process.env.AWS_LAMBDA_FUNCTION_NAME === undefined) {
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`=======================================================`);
+      console.log(`🌱 KRISHI INTELLIGENCE REST API SERVER STARTED`);
+      console.log(`🌾 Platform: One Platform. Smarter Farming. Better Decisions.`);
+      console.log(`🚀 Server running on: http://localhost:${PORT}`);
+      console.log(`📡 Simulation Engine: ACTIVE (${CONFIG.SIMULATION_TICK_SECONDS}s interval)`);
+      console.log(`=======================================================`);
+    });
   });
-});
+}
+
+export default app;

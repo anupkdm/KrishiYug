@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const connectDB = async () => {
-  const mongoURI = process.env.MONGODB_URI;
+  const mongoURI = process.env.MONGODB_URI || "mongodb+srv://anupkadam96k_db_user:PpcBgZb6LnBoea0d@cluster0.mjwpsl6.mongodb.net/krishimitra?retryWrites=true&w=majority";
 
   if (!mongoURI) {
     console.log("ℹ️ [MongoDB Atlas] MONGODB_URI not found in .env. Using persistent local JSON database (backend/data/krishi_database.json).");
