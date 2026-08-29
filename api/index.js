@@ -1,36 +1,44 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { SEED_DATA } from "../backend/data/seedData.js";
+import { SEED_DATA } from "./seedData.js";
 
 const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://anupkadam96k_db_user:PpcBgZb6LnBoea0d@cluster0.mjwpsl6.mongodb.net/krishimitra?retryWrites=true&w=majority";
 const JWT_SECRET = process.env.JWT_SECRET || "krishi-secret-jwt-key-2026-hackathon-secure";
 
-// MongoDB Mongoose Models
-let conn = null;
+let isConnecting = false;
 
 const getDbConnection = async () => {
-  if (conn && mongoose.connection.readyState === 1) return conn;
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (isConnecting) {
+    while (mongoose.connection.readyState !== 1) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return mongoose.connection;
+  }
+
   try {
-    conn = await mongoose.connect(MONGO_URI, {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 8000
+    isConnecting = true;
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 10000
     });
-    console.log("🍃 MongoDB Atlas connected in Serverless function");
-    return conn;
+    console.log("🍃 MongoDB Atlas connected successfully in Serverless function");
+    isConnecting = false;
+    return mongoose.connection;
   } catch (err) {
-    console.error("MongoDB Atlas connection error:", err.message);
+    isConnecting = false;
+    console.error("❌ MongoDB Atlas connection error:", err.message);
     return null;
   }
 };
 
-// Schemas
+// Schemas with strict collection names
 const LabourSchema = new mongoose.Schema({
   id: { type: String },
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, default: "" },
   village: { type: String, default: "Niphad" },
   district: { type: String, default: "Nashik" },
   state: { type: String, default: "Maharashtra" },
@@ -46,14 +54,14 @@ const LabourSchema = new mongoose.Schema({
   rating: { type: Number, default: 4.8 },
   isVerified: { type: Boolean, default: true },
   isNewRegistration: { type: Boolean, default: true }
-}, { timestamps: true });
+}, { timestamps: true, collection: "labours" });
 
 const FarmerSchema = new mongoose.Schema({
   id: { type: String },
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, default: "" },
   location: {
     village: { type: String, default: "Niphad" },
     district: { type: String, default: "Nashik" },
@@ -64,7 +72,7 @@ const FarmerSchema = new mongoose.Schema({
     sizeAcres: { type: Number, default: 5 },
     primaryCrop: { type: String, default: "Soybean" }
   }
-}, { timestamps: true });
+}, { timestamps: true, collection: "farmers" });
 
 const HiringRequestSchema = new mongoose.Schema({
   id: { type: String },
@@ -82,13 +90,12 @@ const HiringRequestSchema = new mongoose.Schema({
   totalCost: { type: Number, default: 450 },
   notes: { type: String, default: "" },
   status: { type: String, default: "Pending" }
-}, { timestamps: true });
+}, { timestamps: true, collection: "hiringrequests" });
 
 const LabourModel = mongoose.models.Labour || mongoose.model("Labour", LabourSchema);
 const FarmerModel = mongoose.models.Farmer || mongoose.model("Farmer", FarmerSchema);
 const HiringRequestModel = mongoose.models.HiringRequest || mongoose.model("HiringRequest", HiringRequestSchema);
 
-// JWT token creator
 const createToken = (user, role) => {
   return jwt.sign(
     { id: user.id || user._id, email: user.email, name: user.name, role },
@@ -97,9 +104,27 @@ const createToken = (user, role) => {
   );
 };
 
-// Master Serverless Request Handler for Vercel
+// Safe Body Parser for all Serverless Environments
+async function parseBody(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  if (req.body && typeof req.body === "string") {
+    try { return JSON.parse(req.body); } catch(e) { return {}; }
+  }
+
+  if (req.readable) {
+    const buffers = [];
+    for await (const chunk of req) {
+      buffers.push(chunk);
+    }
+    const raw = Buffer.concat(buffers).toString();
+    try { return JSON.parse(raw); } catch(e) { return {}; }
+  }
+  return {};
+}
+
+// Master Serverless Request Handler
 export default async function handler(req, res) {
-  // Enable CORS
+  // CORS Headers
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
@@ -109,16 +134,20 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Connect to DB
+  // Connect to live MongoDB Atlas
   await getDbConnection();
 
-  const url = req.url || "/";
-  const path = url.split("?")[0].replace(/^\/api/, "");
+  const rawUrl = req.url || "/";
+  let path = rawUrl.split("?")[0].replace(/^\/api/, "");
+  if (!path.startsWith("/")) path = "/" + path;
   const method = req.method;
+
+  const body = await parseBody(req);
+  console.log(`[API Request] ${method} ${path}`, JSON.stringify(body));
 
   try {
     // 1. Health
-    if (path === "/health" || path === "") {
+    if (path === "/health" || path === "/") {
       return res.status(200).json({
         status: "healthy",
         platform: "Krishi Intelligence Multi-Intelligence Platform",
@@ -127,8 +156,72 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. LABOUR REGISTRATION -> Directly saves to MongoDB Atlas!
-    if (path === "/auth/labour/register" && method === "POST") {
+    // 2. FARMER REGISTRATION -> DIRECT ATLAS SAVE
+    if (path.includes("/auth/farmer/register") && method === "POST") {
+      const { name, email, password, phone, village, district, state, farmName, farmSize, primaryCrop } = body;
+      
+      const farmerEmail = (email || `farmer_${Date.now()}@krishi.in`).toLowerCase();
+      const farmerName = name || "Registered Farmer";
+      const farmerPhone = phone || "+91 98000 00000";
+
+      let passwordHash = "";
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        passwordHash = await bcrypt.hash(password, salt);
+      }
+
+      const farmerDoc = await FarmerModel.create({
+        id: `farmer-${Date.now()}`,
+        name: farmerName,
+        email: farmerEmail,
+        phone: farmerPhone,
+        passwordHash,
+        location: {
+          village: village || "Niphad",
+          district: district || "Nashik",
+          state: state || "Maharashtra"
+        },
+        farm: {
+          name: farmName || `${farmerName}'s Farm`,
+          sizeAcres: parseFloat(farmSize) || 5,
+          primaryCrop: primaryCrop || "Soybean"
+        }
+      });
+
+      console.log(`✅ [MongoDB Atlas] Stored New Farmer: ${farmerDoc.name} (${farmerDoc.email}) ID: ${farmerDoc._id}`);
+
+      const token = createToken(farmerDoc, "FARMER");
+      const userObj = farmerDoc.toObject();
+      delete userObj.passwordHash;
+
+      return res.status(201).json({
+        message: "Farmer registered and saved to MongoDB Atlas",
+        token,
+        user: { ...userObj, role: "FARMER" }
+      });
+    }
+
+    // 3. FARMER LOGIN
+    if (path.includes("/auth/farmer/login") && method === "POST") {
+      const email = (body.email || "").toLowerCase();
+      let farmer = await FarmerModel.findOne({ email });
+      if (!farmer) {
+        farmer = SEED_DATA.farmers.find(f => f.email.toLowerCase() === email) || SEED_DATA.farmers[0];
+      }
+
+      const token = createToken(farmer, "FARMER");
+      const userObj = farmer.toObject ? farmer.toObject() : { ...farmer };
+      delete userObj.passwordHash;
+
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        user: { ...userObj, role: "FARMER" }
+      });
+    }
+
+    // 4. LABOUR REGISTRATION -> DIRECT ATLAS SAVE
+    if (path.includes("/auth/labour/register") && method === "POST") {
       const {
         name,
         email,
@@ -141,24 +234,26 @@ export default async function handler(req, res) {
         expectedDailyWage,
         availability,
         bio
-      } = req.body || {};
+      } = body;
 
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: "Name, email, and password are required." });
+      const labourEmail = (email || `labour_${Date.now()}@krishi.in`).toLowerCase();
+      const labourName = name || "Registered Worker";
+      const labourPhone = phone || "+91 98000 00000";
+
+      let passwordHash = "";
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        passwordHash = await bcrypt.hash(password, salt);
       }
-
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(password, salt);
 
       const wage = parseFloat(expectedDailyWage) || 450;
       const formattedLocation = `${village ? village + ", " : ""}${district || "Nashik"}, ${state || "Maharashtra"}`;
 
-      // Save directly to MongoDB Atlas
       const labourDoc = await LabourModel.create({
         id: `labour-${Date.now()}`,
-        name,
-        email,
-        phone: phone || "+91 98000 00000",
+        name: labourName,
+        email: labourEmail,
+        phone: labourPhone,
         passwordHash,
         village: village || "Niphad",
         district: district || "Nashik",
@@ -176,35 +271,25 @@ export default async function handler(req, res) {
         isNewRegistration: true
       });
 
-      console.log(`✅ [MongoDB Atlas] Registered and stored new Labourer: ${labourDoc.name} (${labourDoc.email})`);
+      console.log(`✅ [MongoDB Atlas] Stored New Labourer: ${labourDoc.name} (${labourDoc.email}) ID: ${labourDoc._id}`);
 
       const token = createToken(labourDoc, "LABOUR");
       const userObj = labourDoc.toObject();
       delete userObj.passwordHash;
 
       return res.status(201).json({
-        message: "Labourer registered and stored in MongoDB Atlas successfully",
+        message: "Labourer registered and saved to MongoDB Atlas",
         token,
         user: { ...userObj, role: "LABOUR" }
       });
     }
 
-    // 3. LABOUR LOGIN -> Authenticates from MongoDB Atlas
-    if (path === "/auth/labour/login" && method === "POST") {
-      const { email, password } = req.body || {};
-      if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required." });
-      }
-
-      let labour = await LabourModel.findOne({ email: email.toLowerCase() });
+    // 5. LABOUR LOGIN
+    if (path.includes("/auth/labour/login") && method === "POST") {
+      const email = (body.email || "").toLowerCase();
+      let labour = await LabourModel.findOne({ email });
       if (!labour) {
-        // Check seed fallback
-        const seedLab = SEED_DATA.labourers.find(l => l.email.toLowerCase() === email.toLowerCase());
-        if (seedLab) {
-          labour = seedLab;
-        } else {
-          return res.status(401).json({ error: "Invalid labour credentials or account not found." });
-        }
+        labour = SEED_DATA.labourers.find(l => l.email.toLowerCase() === email) || SEED_DATA.labourers[0];
       }
 
       const token = createToken(labour, "LABOUR");
@@ -218,74 +303,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. FARMER REGISTRATION -> Directly saves to MongoDB Atlas!
-    if (path === "/auth/farmer/register" && method === "POST") {
-      const { name, email, password, phone, village, district, state, farmName, farmSize, primaryCrop } = req.body || {};
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: "Name, email, and password are required." });
-      }
-
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(password, salt);
-
-      const farmerDoc = await FarmerModel.create({
-        id: `farmer-${Date.now()}`,
-        name,
-        email,
-        phone: phone || "+91 98000 00000",
-        passwordHash,
-        location: {
-          village: village || "Niphad",
-          district: district || "Nashik",
-          state: state || "Maharashtra"
-        },
-        farm: {
-          name: farmName || "Patil Farm",
-          sizeAcres: parseFloat(farmSize) || 5,
-          primaryCrop: primaryCrop || "Soybean"
-        }
-      });
-
-      console.log(`✅ [MongoDB Atlas] Registered and stored new Farmer: ${farmerDoc.name} (${farmerDoc.email})`);
-
-      const token = createToken(farmerDoc, "FARMER");
-      const userObj = farmerDoc.toObject();
-      delete userObj.passwordHash;
-
-      return res.status(201).json({
-        message: "Farmer registered and stored in MongoDB Atlas successfully",
-        token,
-        user: { ...userObj, role: "FARMER" }
-      });
-    }
-
-    // 5. FARMER LOGIN
-    if (path === "/auth/farmer/login" && method === "POST") {
-      const { email } = req.body || {};
-      let farmer = await FarmerModel.findOne({ email: email?.toLowerCase() });
-      if (!farmer) {
-        farmer = SEED_DATA.farmers.find(f => f.email.toLowerCase() === email?.toLowerCase()) || SEED_DATA.farmers[0];
-      }
-
-      const token = createToken(farmer, "FARMER");
-      const userObj = farmer.toObject ? farmer.toObject() : { ...farmer };
-      delete userObj.passwordHash;
-
-      return res.status(200).json({
-        message: "Login successful",
-        token,
-        user: { ...userObj, role: "FARMER" }
-      });
-    }
-
-    // 6. GET LABOURERS -> Queries from MongoDB Atlas + Seeds
-    if (path.startsWith("/labour") && !path.includes("/request") && !path.includes("/matches")) {
+    // 6. GET ALL LABOURERS -> QUERIES FROM LIVE ATLAS
+    if (path.includes("/labour") && !path.includes("/request") && !path.includes("/matches")) {
       let atlasLabourers = [];
       try {
         atlasLabourers = await LabourModel.find({}).sort({ createdAt: -1 }).lean();
-      } catch (e) {}
+      } catch (e) {
+        console.error("Atlas labour read error:", e);
+      }
 
-      // Combine with seed labourers without duplicates
       const existingEmails = new Set(atlasLabourers.map(l => l.email));
       const combined = [
         ...atlasLabourers,
@@ -298,31 +324,31 @@ export default async function handler(req, res) {
       });
     }
 
-    // 7. HIRING REQUEST -> Saves to MongoDB Atlas
-    if (path === "/labour/request" && method === "POST") {
+    // 7. HIRING REQUEST -> DIRECT ATLAS SAVE
+    if (path.includes("/labour/request") && method === "POST") {
       const hireDoc = await HiringRequestModel.create({
         id: `hire-${Date.now()}`,
-        ...req.body,
+        ...body,
         status: "Pending"
       });
-      console.log(`✅ [MongoDB Atlas] Created Hiring Request in Atlas: ${hireDoc.id}`);
+      console.log(`✅ [MongoDB Atlas] Stored New Hiring Request: ${hireDoc.id}`);
       return res.status(201).json({
         message: "Hiring request saved to MongoDB Atlas",
         request: hireDoc
       });
     }
 
-    // 8. GET HIRING REQUESTS
-    if (path === "/labour/requests") {
+    // 8. GET HIRING REQUESTS -> FROM LIVE ATLAS
+    if (path.includes("/labour/requests")) {
       const requests = await HiringRequestModel.find({}).sort({ createdAt: -1 }).lean();
       return res.status(200).json({ requests });
     }
 
     // 9. Static Seed Handlers
-    if (path.startsWith("/market/prices")) return res.status(200).json({ marketPrices: SEED_DATA.marketPrices });
-    if (path.startsWith("/schemes")) return res.status(200).json({ schemes: SEED_DATA.schemes });
-    if (path.startsWith("/machinery")) return res.status(200).json({ machinery: SEED_DATA.machinery });
-    if (path.startsWith("/notifications")) return res.status(200).json({ notifications: SEED_DATA.notifications });
+    if (path.includes("/market/prices")) return res.status(200).json({ marketPrices: SEED_DATA.marketPrices });
+    if (path.includes("/schemes")) return res.status(200).json({ schemes: SEED_DATA.schemes });
+    if (path.includes("/machinery")) return res.status(200).json({ machinery: SEED_DATA.machinery });
+    if (path.includes("/notifications")) return res.status(200).json({ notifications: SEED_DATA.notifications });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
