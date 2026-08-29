@@ -38,11 +38,32 @@ router.get("/history", (req, res) => {
 router.get("/prediction", (req, res) => {
   const { crop = "Soybean" } = req.query;
   const prediction = MarketService.getPricePrediction(crop);
-// POST / GET Market Scheme Comparison (Location -> Money Needed -> Compare -> Best Option -> Conclusion)
-router.all("/scheme-compare", (req, res) => {
-  const { crop = "Wheat", location = "Ahmednagar", moneyNeeded = 50000 } = { ...req.query, ...req.body };
-  const result = MarketService.compareMarketScheme({ crop, location, moneyNeeded });
-  res.json(result);
+  res.json(prediction);
+});
+
+// POST / GET Market Comparison & Intelligence
+router.all("/compare", (req, res) => {
+  const { crop = "Wheat", farmerLocation, quantity = 20, unit = "quintal" } = { ...req.query, ...req.body };
+  const comparison = MarketService.compareMarkets({
+    crop,
+    farmerLocation,
+    quantity,
+    unit
+  });
+  res.json(comparison);
+});
+
+// POST / GET Recommendation
+router.all("/recommendation", (req, res) => {
+  const { crop = "Wheat", farmerLocation, quantity = 20, unit = "quintal" } = { ...req.query, ...req.body };
+  const comparison = MarketService.compareMarkets({
+    crop,
+    farmerLocation,
+    quantity,
+    unit
+  });
+  res.json(comparison.bestOption);
 });
 
 export default router;
+
