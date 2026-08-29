@@ -25,16 +25,6 @@ import {
   Award,
   Zap
 } from "lucide-react";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from "recharts";
 import confetti from "canvas-confetti";
 
 export const MarketIntelligenceTab = () => {
@@ -58,9 +48,8 @@ export const MarketIntelligenceTab = () => {
   const [varietyGrade, setVarietyGrade] = useState("Grade A (FAQ)");
   const [marketDate, setMarketDate] = useState(new Date().toISOString().split("T")[0]);
 
-  // Comparison Results & Chart State
+  // Comparison Results State
   const [comparisonData, setComparisonData] = useState(null);
-  const [timeframe, setTimeframe] = useState("7d"); // "7d" | "30d" | "3m"
   const [loading, setLoading] = useState(false);
 
   const CROPS_LIST = [
@@ -227,36 +216,8 @@ export const MarketIntelligenceTab = () => {
     handleCompareMarkets();
   }, [selectedCrop, quantity, unit, currentLocation]);
 
-  // Chart data generator for Price Trends
-  const getTrendChartData = () => {
-    const baseP = comparisonData?.summary?.highestPrice || 2850;
-    if (timeframe === "7d") {
-      return [
-        { name: "Day -6", Lasalgaon: baseP - 70, Manmad: baseP - 120, Nashik: baseP - 90 },
-        { name: "Day -5", Lasalgaon: baseP - 40, Manmad: baseP - 95, Nashik: baseP - 60 },
-        { name: "Day -4", Lasalgaon: baseP - 10, Manmad: baseP - 70, Nashik: baseP - 40 },
-        { name: "Day -3", Lasalgaon: baseP + 20, Manmad: baseP - 50, Nashik: baseP - 15 },
-        { name: "Day -2", Lasalgaon: baseP + 50, Manmad: baseP - 20, Nashik: baseP + 10 },
-        { name: "Yesterday", Lasalgaon: baseP + 75, Manmad: baseP, Nashik: baseP + 25 },
-        { name: "Today", Lasalgaon: baseP + 100, Manmad: baseP + 20, Nashik: baseP + 50 }
-      ];
-    } else if (timeframe === "30d") {
-      return [
-        { name: "Week 1", Lasalgaon: baseP - 140, Manmad: baseP - 200, Nashik: baseP - 160 },
-        { name: "Week 2", Lasalgaon: baseP - 80, Manmad: baseP - 140, Nashik: baseP - 100 },
-        { name: "Week 3", Lasalgaon: baseP - 10, Manmad: baseP - 70, Nashik: baseP - 30 },
-        { name: "Week 4", Lasalgaon: baseP + 100, Manmad: baseP + 20, Nashik: baseP + 50 }
-      ];
-    } else {
-      return [
-        { name: "2 Months Ago", Lasalgaon: baseP - 260, Manmad: baseP - 320, Nashik: baseP - 290 },
-        { name: "Last Month", Lasalgaon: baseP - 120, Manmad: baseP - 180, Nashik: baseP - 140 },
-        { name: "This Month", Lasalgaon: baseP + 100, Manmad: baseP + 20, Nashik: baseP + 50 }
-      ];
-    }
-  };
-
   return (
+
     <div className="space-y-6 pb-12 font-sans max-w-6xl mx-auto">
       {/* ========================================================================= */}
       {/* 1. PAGE HEADER                                                            */}
@@ -736,77 +697,10 @@ export const MarketIntelligenceTab = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 6. PRICE TREND SECTION (Recharts AreaChart)                              */}
-      {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide font-display flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-              <span>{t("market.priceTrendTitle", "Price Trend Over Time")} ({selectedCrop})</span>
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Historical APMC prices across top regional terminal mandis.
-            </p>
-          </div>
-
-          {/* Timeframe Toggles */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-            {[
-              { id: "7d", label: t("market.timeframe7d", "7 Days") },
-              { id: "30d", label: t("market.timeframe30d", "30 Days") },
-              { id: "3m", label: t("market.timeframe3m", "3 Months") }
-            ].map((tf) => (
-              <button
-                key={tf.id}
-                onClick={() => setTimeframe(tf.id)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  timeframe === tf.id
-                    ? "bg-white text-emerald-800 shadow-sm font-black"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {tf.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Recharts Chart Area */}
-        <div className="h-64 sm:h-72 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={getTrendChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="lasalgaonGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#059669" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0.0}/>
-                </linearGradient>
-                <linearGradient id="manmadGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25}/>
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} />
-              <YAxis domain={['auto', 'auto']} tick={{ fontSize: 11, fill: "#64748b" }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                formatter={(val) => [`₹${val.toLocaleString('en-IN')}`, 'Price / Qtl']}
-              />
-              <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-              <Area type="monotone" dataKey="Lasalgaon" stroke="#059669" strokeWidth={2.5} fillOpacity={1} fill="url(#lasalgaonGrad)" />
-              <Area type="monotone" dataKey="Manmad" stroke="#2563eb" strokeWidth={1.5} fillOpacity={1} fill="url(#manmadGrad)" />
-              <Area type="monotone" dataKey="Nashik" stroke="#f59e0b" strokeWidth={1.5} fillOpacity={0} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 7. TRANSPORT COST BREAKDOWN & 8. MARKET INSIGHT (Side-by-Side Grid)       */}
+      {/* TRANSPORT COST BREAKDOWN & MARKET INSIGHT (Side-by-Side Grid)             */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 7. Transport Cost Breakdown Card */}
+        {/* Transport Cost Breakdown Card */}
         {comparisonData?.transportBreakdown && (
           <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
