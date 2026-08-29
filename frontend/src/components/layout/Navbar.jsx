@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "../common/Badge";
 
-export const Navbar = ({ onNavigate, currentTab, onToggleMobileMenu }) => {
+export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobileMenu, isSidebarOpen = true }) => {
   const { user, logout, isFarmer } = useAuth();
   const { t } = useLanguage();
   const { 
@@ -27,17 +27,26 @@ export const Navbar = ({ onNavigate, currentTab, onToggleMobileMenu }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const handleToggle = () => {
+    if (onToggleSidebar) {
+      onToggleSidebar();
+    } else if (onToggleMobileMenu) {
+      onToggleMobileMenu();
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3 transition-all">
       <div className="flex items-center justify-between w-full max-w-[1560px] mx-auto">
-        {/* Brand & Mobile Menu Toggle */}
+        {/* Navigation Menu Button & Brand */}
         <div className="flex items-center gap-3">
           <button
-            onClick={onToggleMobileMenu}
-            className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 border border-slate-200 md:hidden flex items-center justify-center shadow-sm"
-            aria-label="Open Navigation Menu"
+            onClick={handleToggle}
+            className="p-2 sm:p-2.5 rounded-2xl text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 bg-slate-50/80 hover:bg-slate-100 border border-slate-200/90 hover:border-emerald-200 flex items-center justify-center shadow-xs transition-all cursor-pointer group"
+            aria-label="Toggle Navigation Menu"
+            title="Toggle Navigation Menu"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 group-hover:scale-105 transition-transform" />
           </button>
 
           <div 

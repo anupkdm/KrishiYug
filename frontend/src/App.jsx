@@ -37,6 +37,15 @@ const AppContent = () => {
   const [currentTab, setCurrentTab] = useState("dashboard");
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setIsMobileMenuOpen(prev => !prev);
+    } else {
+      setIsSidebarOpen(prev => !prev);
+    }
+  };
 
   if (loading) {
     return (
@@ -159,7 +168,9 @@ const AppContent = () => {
       <Navbar 
         onNavigate={handleNavigate} 
         currentTab={currentTab} 
+        onToggleSidebar={handleToggleSidebar}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        isSidebarOpen={isSidebarOpen}
       />
       
       {/* Mobile Sidebar Drawer */}
@@ -198,10 +209,16 @@ const AppContent = () => {
       )}
 
       {/* Main Layout Area - Wide, Spacious & Perfectly Aligned */}
-      <div className="flex-1 flex w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
-        <Sidebar currentTab={currentTab} onNavigate={handleNavigate} />
+      <div className="flex-1 flex w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6 transition-all duration-300">
+        <div className={`hidden md:block transition-all duration-300 ease-in-out origin-left ${
+          isSidebarOpen 
+            ? "w-64 lg:w-72 opacity-100 translate-x-0 shrink-0" 
+            : "w-0 opacity-0 -translate-x-12 pointer-events-none overflow-hidden m-0 p-0 shrink-0"
+        }`}>
+          <Sidebar currentTab={currentTab} onNavigate={handleNavigate} />
+        </div>
         
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 transition-all duration-300">
           {isFarmer && renderFarmerContent()}
           {isLabour && renderLabourContent()}
         </main>
