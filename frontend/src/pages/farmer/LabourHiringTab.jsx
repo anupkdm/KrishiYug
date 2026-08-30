@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useOfflineSync } from "../../context/OfflineSyncContext";
 import { api } from "../../services/api";
 import { 
   Users, 
@@ -17,12 +18,14 @@ import {
   ShieldCheck, 
   Sparkles,
   Send,
-  AlertCircle
+  AlertCircle,
+  HardDrive
 } from "lucide-react";
 
 export const LabourHiringTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { executeWithOfflineSupport } = useOfflineSync();
   const [labourers, setLabourers] = useState([]);
   const [hiringRequests, setHiringRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,7 @@ export const LabourHiringTab = () => {
   // Contact Modal State
   const [contactModalLabour, setContactModalLabour] = useState(null);
 
-  // Hire Form Modal State
+  // Hire Modal State
   const [hireModalLabour, setHireModalLabour] = useState(null);
   const [hireForm, setHireForm] = useState({
     workType: "Harvesting",
@@ -58,34 +61,36 @@ export const LabourHiringTab = () => {
     { id: "Farm Helper", label: t("labour.helper", "Farm Helper"), icon: "🧑‍🌾" }
   ];
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  // Fetch Labourers and Hiring Requests from backend
+  const fetchData = async () => {
     setLoading(true);
     try {
       const [labourRes, reqsRes] = await Promise.all([
         api.getLabourers().catch(() => ({ labourers: [] })),
         api.getHiringRequests().catch(() => ({ requests: [] }))
       ]);
+
       setLabourers(labourRes.labourers || []);
       setHiringRequests(reqsRes.requests || []);
     } catch (err) {
-      console.error("Failed to load labour hiring data:", err);
+      console.error("Error loading labour data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Open Hire Modal
-  const handleOpenHireModal = (labour) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Handle opening Hire Modal
+  const openHireModal = (labour) => {
     setHireModalLabour(labour);
     setHireForm({
-      workType: labour.skills && labour.skills[0] ? labour.skills[0] : "Harvesting",
+      workType: labour.skills?.[0] || "Harvesting",
       date: new Date().toISOString().split("T")[0],
       duration: 1,
-      notes: `Hiring for farm work near ${user?.location?.village || "Nashik"}.`
+      notes: `Hiring for farm work in ${farmerVillage}, ${farmerDistrict}`
     });
   };
 
@@ -110,8 +115,19 @@ export const LabourHiringTab = () => {
         notes: hireForm.notes
       };
 
-      await api.sendHiringRequest(hirePayload);
-      setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
+      const res = await executeWithOfflineSupport({
+        type: "HIRING_REQUEST",
+        title: `Hire ${hireModalLabour.name} (${hireForm.workType})`,
+        endpoint: "/labour/request",
+        payload: hirePayload,
+        directApiCall: () => api.sendHiringRequest(hirePayload)
+      });
+
+      if (res.isOfflineQueued) {
+        setToastMessage(`💾 Queued offline: Hiring request for ${hireModalLabour.name} saved!`);
+      } else {
+        setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
+      }
       setHireModalLabour(null);
       
       // Refresh requests list
@@ -310,7 +326,7 @@ export const LabourHiringTab = () => {
                               {labour.name}
                             </h3>
                             <p className="text-xs font-semibold text-slate-500">
-                              {labour.experienceYears ? `${labour.experienceYears} Years Experience` : "Verified Agricultural Worker"}
+                              {labour.preferredWorkArea ? `📍 ${labour.preferredWorkArea}` : "Verified Agricultural Worker"}
                             </p>
                           </div>
                         </div>
