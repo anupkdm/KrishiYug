@@ -4,9 +4,16 @@ import { api } from "../services/api";
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem("krishi_user");
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [token, setToken] = useState(localStorage.getItem("krishi_token") || null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!localStorage.getItem("krishi_token"));
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -15,10 +22,12 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           const res = await api.getCurrentUser();
-          setUser(res.user);
+          if (res?.user) {
+            setUser(res.user);
+            localStorage.setItem("krishi_user", JSON.stringify(res.user));
+          }
         } catch (err) {
-          console.warn("Stored auth token invalid or expired. Logging out.");
-          logout();
+          console.warn("Stored auth token invalid or expired. Keeping local session if available.");
         }
       }
       setLoading(false);
@@ -28,80 +37,83 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const saveAuthSession = (newToken, newUser) => {
-    localStorage.setItem("krishi_token", newToken);
-    setToken(newToken);
-    setUser(newUser);
+    const userObj = newUser?.user || newUser?.farmer || newUser?.labour || newUser;
+    if (newToken) {
+      localStorage.setItem("krishi_token", newToken);
+      setToken(newToken);
+    }
+    if (userObj) {
+      localStorage.setItem("krishi_user", JSON.stringify(userObj));
+      setUser(userObj);
+    }
     setError(null);
   };
 
   const farmerRegister = async (formData) => {
-    setLoading(true);
     setError(null);
     try {
       const res = await api.farmerRegister(formData);
-      saveAuthSession(res.token, res.user);
-      return res.user;
+      const userObj = res?.user || res?.farmer || res;
+      saveAuthSession(res?.token, userObj);
+      return userObj;
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const farmerLogin = async (credentials) => {
-    setLoading(true);
     setError(null);
     try {
       const res = await api.farmerLogin(credentials);
-      saveAuthSession(res.token, res.user);
-      return res.user;
+      const userObj = res?.user || res?.farmer || res;
+      saveAuthSession(res?.token, userObj);
+      return userObj;
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const labourRegister = async (formData) => {
-    setLoading(true);
     setError(null);
     try {
       const res = await api.labourRegister(formData);
-      saveAuthSession(res.token, res.user);
-      return res.user;
+      const userObj = res?.user || res?.labour || res;
+      saveAuthSession(res?.token, userObj);
+      return userObj;
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const labourLogin = async (credentials) => {
-    setLoading(true);
     setError(null);
     try {
       const res = await api.labourLogin(credentials);
-      saveAuthSession(res.token, res.user);
-      return res.user;
+      const userObj = res?.user || res?.labour || res;
+      saveAuthSession(res?.token, userObj);
+      return userObj;
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = () => {
     localStorage.removeItem("krishi_token");
+    localStorage.removeItem("krishi_user");
     setToken(null);
     setUser(null);
   };
 
   const updateUserProfile = (updatedProfile) => {
-    setUser(prev => ({ ...prev, ...updatedProfile }));
+    setUser(prev => {
+      const updated = { ...prev, ...updatedProfile };
+      localStorage.setItem("krishi_user", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (

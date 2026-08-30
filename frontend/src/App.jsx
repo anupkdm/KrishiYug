@@ -46,6 +46,14 @@ const AppContent = () => {
     }
   };
 
+  const handleNavigate = (tabId) => {
+    if (tabId === "presentation") {
+      setIsPresentationOpen(true);
+      return;
+    }
+    setCurrentTab(tabId);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
@@ -64,6 +72,11 @@ const AppContent = () => {
     return <PresentationMode onExit={() => setIsPresentationOpen(false)} />;
   }
 
+  const handleAuthSuccess = () => {
+    setCurrentTab("dashboard");
+    setCurrentView("landing");
+  };
+
   // Unauthenticated Views
   if (!isAuthenticated) {
     if (currentView === "farmer-login") {
@@ -71,7 +84,7 @@ const AppContent = () => {
         <FarmerAuth
           initialMode="login"
           onBack={() => setCurrentView("landing")}
-          onSuccess={() => setCurrentTab("dashboard")}
+          onSuccess={handleAuthSuccess}
         />
       );
     }
@@ -80,7 +93,7 @@ const AppContent = () => {
         <FarmerAuth
           initialMode="register"
           onBack={() => setCurrentView("landing")}
-          onSuccess={() => setCurrentTab("dashboard")}
+          onSuccess={handleAuthSuccess}
         />
       );
     }
@@ -89,7 +102,7 @@ const AppContent = () => {
         <LabourAuth
           initialMode="login"
           onBack={() => setCurrentView("landing")}
-          onSuccess={() => setCurrentTab("dashboard")}
+          onSuccess={handleAuthSuccess}
         />
       );
     }
@@ -98,7 +111,7 @@ const AppContent = () => {
         <LabourAuth
           initialMode="register"
           onBack={() => setCurrentView("landing")}
-          onSuccess={() => setCurrentTab("dashboard")}
+          onSuccess={handleAuthSuccess}
         />
       );
     }
@@ -111,15 +124,6 @@ const AppContent = () => {
   }
 
   // Authenticated Portal Views
-  const handleNavigate = (tab) => {
-    if (tab === "presentation") {
-      setIsPresentationOpen(true);
-      return;
-    }
-    setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const renderFarmerContent = () => {
     switch (currentTab) {
       case "dashboard":
@@ -145,10 +149,8 @@ const AppContent = () => {
     switch (currentTab) {
       case "dashboard":
         return <LabourDashboardHome onNavigate={handleNavigate} />;
-      case "available-jobs":
-        return <LabourDashboardHome onNavigate={handleNavigate} />;
       case "my-applications":
-        return <MyApplicationsTab />;
+        return <MyApplicationsTab onNavigate={handleNavigate} />;
       case "my-work":
         return <MyWorkTab />;
       case "profile":
@@ -161,42 +163,43 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Navbar 
-        onNavigate={handleNavigate} 
-        currentTab={currentTab} 
+        onPresentationClick={() => setIsPresentationOpen(true)}
         onToggleSidebar={handleToggleSidebar}
-        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        isSidebarOpen={isSidebarOpen}
       />
       
-      {/* Mobile Sidebar Drawer */}
+      {/* Mobile Slide-over Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 z-50 md:hidden animate-in fade-in duration-200">
+          {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-300">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-display font-black text-slate-900 text-base">
-                <span className="text-lg">🌱</span>
-                <span>KrishiMitra</span>
+          
+          {/* Slide-in Navigation Panel */}
+          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-2xl z-50 flex flex-col transform transition-transform ease-in-out duration-300">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                  <Sprout className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-extrabold text-sm text-slate-900">Navigation Menu</span>
               </div>
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
-                aria-label="Close Menu"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            
+            <div className="flex-1 overflow-y-auto p-4">
               <Sidebar 
                 currentTab={currentTab} 
                 onNavigate={(tab) => {
                   handleNavigate(tab);
                   setIsMobileMenuOpen(false);
                 }} 
-                isMobile
               />
             </div>
           </div>

@@ -35,12 +35,12 @@ export const LabourHiringTab = () => {
   // Contact Modal State
   const [contactModalLabour, setContactModalLabour] = useState(null);
 
-  // Hire Modal State
+  // Hire Form Modal State
   const [hireModalLabour, setHireModalLabour] = useState(null);
   const [hireForm, setHireForm] = useState({
     workType: "Harvesting",
     date: new Date().toISOString().split("T")[0],
-    duration: 2,
+    duration: 1,
     notes: ""
   });
   const [submittingHire, setSubmittingHire] = useState(false);
@@ -58,45 +58,34 @@ export const LabourHiringTab = () => {
     { id: "Farm Helper", label: t("labour.helper", "Farm Helper"), icon: "🧑‍🌾" }
   ];
 
-  const WORK_TYPES = [
-    "Harvesting",
-    "Planting / Sowing",
-    "Spraying & Pesticides",
-    "Weeding & Soil Care",
-    "Tractor / Machine Operation",
-    "General Farm Labour"
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  // Fetch Labourers and Hiring Requests from backend
-  const fetchData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
       const [labourRes, reqsRes] = await Promise.all([
-        api.getLabourers(),
+        api.getLabourers().catch(() => ({ labourers: [] })),
         api.getHiringRequests().catch(() => ({ requests: [] }))
       ]);
-
       setLabourers(labourRes.labourers || []);
       setHiringRequests(reqsRes.requests || []);
     } catch (err) {
-      console.error("Error loading labour data:", err);
+      console.error("Failed to load labour hiring data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Handle opening Hire Modal
-  const openHireModal = (labour) => {
+  // Open Hire Modal
+  const handleOpenHireModal = (labour) => {
     setHireModalLabour(labour);
     setHireForm({
-      workType: labour.skills?.[0] || "Harvesting",
+      workType: labour.skills && labour.skills[0] ? labour.skills[0] : "Harvesting",
       date: new Date().toISOString().split("T")[0],
-      duration: 2,
-      notes: `Hiring for farm work in ${farmerVillage}, ${farmerDistrict}`
+      duration: 1,
+      notes: `Hiring for farm work near ${user?.location?.village || "Nashik"}.`
     });
   };
 
@@ -111,7 +100,7 @@ export const LabourHiringTab = () => {
       const duration = parseInt(hireForm.duration) || 1;
       const totalCost = dailyWage * duration;
 
-      const res = await api.sendHiringRequest({
+      const hirePayload = {
         labourId: hireModalLabour.id,
         workType: hireForm.workType,
         date: hireForm.date,
@@ -119,8 +108,9 @@ export const LabourHiringTab = () => {
         dailyWage: dailyWage,
         totalCost: totalCost,
         notes: hireForm.notes
-      });
+      };
 
+      await api.sendHiringRequest(hirePayload);
       setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
       setHireModalLabour(null);
       

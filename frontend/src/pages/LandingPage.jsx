@@ -95,39 +95,49 @@ export const LandingPage = ({ onSelectAuth }) => {
         </div>
       </header>
 
-      {/* Welcoming Hero Section with Agricultural Background */}
-      <main className="flex-1">
-        <div className="relative overflow-hidden border-b border-emerald-200/60 bg-emerald-900/5">
+      {/* Welcoming Hero Section & Portal Gateway */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-8 sm:space-y-10">
+        {/* Welcoming Hero Banner with Vivid Agricultural Background */}
+        <div className="relative rounded-3xl overflow-hidden border border-slate-200/80 shadow-xl bg-slate-950 min-h-[360px] sm:min-h-[400px] flex items-center justify-center p-6 sm:p-12 text-center group">
           {/* Background Agricultural Landscape Image */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35 transform scale-105"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&auto=format&fit=crop&q=80')`
-            }}
+          <img 
+            src="/images/hero-bg.jpg" 
+            alt="Smart Indian Agriculture Ecosystem" 
+            className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
           />
-          {/* Light Glassmorphic Wash Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/85 to-slate-50 backdrop-blur-[0.5px]" />
+
+          {/* Crisp Gradient Overlay for Maximum Legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-slate-950/30" />
 
           {/* Hero Content */}
-          <section className="relative z-10 px-4 sm:px-6 pt-8 sm:pt-12 pb-7 sm:pb-9 max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-emerald-900 text-xs font-black mb-3.5 border border-emerald-300 shadow-sm">
+          <div className="relative z-10 max-w-3xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950/70 backdrop-blur-md text-emerald-300 text-xs font-bold border border-emerald-500/30 shadow-md">
               <span>🌱</span>
               <span>{t("landing.welcomeTag")}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight font-display max-w-3xl mx-auto leading-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight font-display leading-tight drop-shadow-lg">
               {t("landing.heroTitle")}
             </h1>
 
-            <p className="text-xs sm:text-base text-slate-700 max-w-2xl mx-auto mt-3 leading-relaxed font-semibold">
+            <p className="text-xs sm:text-base text-slate-100 max-w-2xl mx-auto leading-relaxed font-medium drop-shadow-md">
               {t("landing.heroSubtitle")}
             </p>
-          </section>
+          </div>
         </div>
 
         {/* Dual Role Gateway Cards */}
-        <section className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
+        <section className="space-y-4">
+          <div className="text-center space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
+              {t("landing.chooseRoleTitle")}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              {t("landing.chooseRoleSubtitle")}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
             {/* Farmer Card */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-emerald-500/30 hover:border-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 pointer-events-none transition-transform group-hover:scale-110"></div>
@@ -142,9 +152,9 @@ export const LandingPage = ({ onSelectAuth }) => {
                   </span>
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
                   {t("landing.farmerCardTitle")}
-                </h2>
+                </h3>
                 <p className="text-xs text-slate-600 mt-1 font-medium leading-relaxed">
                   {t("landing.farmerCardSubtitle")}
                 </p>
@@ -196,9 +206,9 @@ export const LandingPage = ({ onSelectAuth }) => {
                   </span>
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
                   {t("landing.labourCardTitle")}
-                </h2>
+                </h3>
                 <p className="text-xs text-slate-600 mt-1 font-medium leading-relaxed">
                   {t("landing.labourCardSubtitle")}
                 </p>
@@ -239,87 +249,87 @@ export const LandingPage = ({ onSelectAuth }) => {
         </section>
 
         {/* 4 Core Services */}
-        <section className="px-4 sm:px-6 py-10 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display">
-            {t("landing.servicesTitle")}
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            {t("landing.servicesSubtitle")}
-          </p>
-        </div>
+        <section className="space-y-6 pt-2">
+          <div className="text-center space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
+              {t("landing.servicesTitle")}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              {t("landing.servicesSubtitle")}
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {services.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-50 text-emerald-600 border border-slate-200 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {services.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center mb-3.5">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="mb-2 text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full inline-block border border-emerald-100">
+                      {item.badge}
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 font-display mb-1.5">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                      {item.description}
+                    </p>
                   </div>
-                  <div className="mb-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded inline-block">
-                    {item.badge}
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 font-display mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {item.description}
-                  </p>
                 </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* How it Works - 3 Simple Steps */}
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="text-center space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+              {t("landing.stepsTag")}
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display mt-2">
+              {t("landing.stepsTitle")}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center mx-auto mb-2.5 shadow-sm">
+                1
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* How it Works - 3 Simple Steps */}
-      <section className="px-4 sm:px-6 py-12 max-w-5xl mx-auto bg-white rounded-3xl border border-slate-200 my-6 shadow-sm">
-        <div className="text-center mb-8">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
-            {t("landing.stepsTag")}
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display mt-2">
-            {t("landing.stepsTitle")}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center mx-auto mb-3">
-              1
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900">{t("landing.step1Title")}</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                {t("landing.step1Desc")}
+              </p>
             </div>
-            <h4 className="font-bold text-sm text-slate-900">{t("landing.step1Title")}</h4>
-            <p className="text-xs text-slate-500 mt-1.5">
-              {t("landing.step1Desc")}
-            </p>
-          </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center mx-auto mb-3">
-              2
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center mx-auto mb-2.5 shadow-sm">
+                2
+              </div>
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900">{t("landing.step2Title")}</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                {t("landing.step2Desc")}
+              </p>
             </div>
-            <h4 className="font-bold text-sm text-slate-900">{t("landing.step2Title")}</h4>
-            <p className="text-xs text-slate-500 mt-1.5">
-              {t("landing.step2Desc")}
-            </p>
-          </div>
 
-          <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center mx-auto mb-3">
-              3
+            <div className="p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200">
+              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center mx-auto mb-2.5 shadow-sm">
+                3
+              </div>
+              <h3 className="font-bold text-xs sm:text-sm text-emerald-950">{t("landing.step3Title")}</h3>
+              <p className="text-xs text-emerald-800 mt-1 font-medium leading-relaxed">
+                {t("landing.step3Desc")}
+              </p>
             </div>
-            <h4 className="font-bold text-sm text-emerald-900">{t("landing.step3Title")}</h4>
-            <p className="text-xs text-emerald-700 mt-1.5">
-              {t("landing.step3Desc")}
-            </p>
           </div>
-        </div>
-      </section>
+        </section>
       </main>
 
       {/* Universal Rich Footer */}

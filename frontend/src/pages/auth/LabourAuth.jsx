@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageSelector } from "../../components/common/LanguageSelector";
-import { ArrowLeft, Lock, Mail, User, Phone, MapPin, Briefcase, IndianRupee, Check } from "lucide-react";
+import { ArrowLeft, Lock, Mail, User, Phone, MapPin, Briefcase, IndianRupee, Check, CheckCircle2 } from "lucide-react";
 
 export const LabourAuth = ({ initialMode = "login", onBack, onSuccess }) => {
   const [isRegister, setIsRegister] = useState(initialMode === "register");

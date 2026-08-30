@@ -164,23 +164,23 @@ export const FarmerDashboardHome = ({ onNavigate }) => {
   const farmer = dashboardData?.farmer || user;
   const currentRegionData = regions.find(r => r.name === selectedRegion) || regions[0];
 
-  // Module content mapped cleanly with dedicated section background images
+  // Module content mapped cleanly with dedicated section background images in requested order
   const modules = [
     {
-      id: "ai-advisory",
+      id: "market-prices",
       number: "1",
-      icon: "🤖",
-      iconBg: "bg-blue-50 border-blue-200/80 text-blue-700",
-      image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800&auto=format&fit=crop&q=80",
-      accentGlow: "from-blue-500/10",
-      title: language === "mr" ? "१. कृषी सल्ला (AI Farm Advisory)" : language === "hi" ? "1. फसल सलाह (AI Farm Advisory)" : "1. AI Farm Advisory",
+      icon: "💰",
+      iconBg: "bg-purple-50 border-purple-200/80 text-purple-700",
+      image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80",
+      accentGlow: "from-purple-500/10",
+      title: language === "mr" ? "१. बाजार भाव (Market Prices)" : language === "hi" ? "1. मंडी भाव (Mandi Prices)" : "1. Mandi Prices",
       description: language === "mr" 
-        ? "पिकांचे दैनंदिन योग्य नियोजन, रोग-कीड नियंत्रण आणि पाणी देण्याचा अचूक सल्ला." 
+        ? "ताजे बाजार भाव, किमतीचा अंदाज आणि पीक विकण्याचा किंवा थांबण्याचा सल्ला." 
         : language === "hi" 
-        ? "फसल का दैनिक प्रबंधन, मौसम चेतावनी और सिंचाई का सटीक सुझाव।" 
-        : "Personalized daily agricultural actions, weather risk alerts, and irrigation schedules.",
-      actionLabel: language === "mr" ? "कृषी सल्ला पहा" : language === "hi" ? "फसल सलाह देखें" : "AI Farm Advisory",
-      targetTab: "ai-advisor"
+        ? "ताज़ा मंडी भाव, मूल्य रुझान और फसल बेचने या रुकने का सीधा सुझाव।" 
+        : "Live APMC market rates, 7-day price forecasting, and optimal Sell or Wait recommendations.",
+      actionLabel: language === "mr" ? "बाजार भाव तपासा" : language === "hi" ? "मंडी भाव देखें" : "Mandi Prices",
+      targetTab: "market"
     },
     {
       id: "labour-machinery",
@@ -199,29 +199,13 @@ export const FarmerDashboardHome = ({ onNavigate }) => {
       targetTab: "labour-hiring"
     },
     {
-      id: "market-prices",
-      number: "3",
-      icon: "💰",
-      iconBg: "bg-purple-50 border-purple-200/80 text-purple-700",
-      image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80",
-      accentGlow: "from-purple-500/10",
-      title: language === "mr" ? "३. बाजार भाव (Market Prices)" : language === "hi" ? "3. मंडी भाव (Market Prices)" : "3. Market Prices",
-      description: language === "mr" 
-        ? "ताजे बाजार भाव, किमतीचा अंदाज आणि पीक विकण्याचा किंवा थांबण्याचा सल्ला." 
-        : language === "hi" 
-        ? "ताज़ा मंडी भाव, मूल्य रुझान और फसल बेचने या रुकने का सीधा सुझाव।" 
-        : "Live APMC market rates, 7-day price forecasting, and optimal Sell or Wait recommendations.",
-      actionLabel: language === "mr" ? "बाजार भाव तपासा" : language === "hi" ? "मंडी भाव देखें" : "Market Prices",
-      targetTab: "market"
-    },
-    {
       id: "govt-schemes",
-      number: "4",
+      number: "3",
       icon: "🏛️",
       iconBg: "bg-emerald-50 border-emerald-200/80 text-emerald-700",
       image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=80",
       accentGlow: "from-emerald-500/10",
-      title: language === "mr" ? "४. शासकीय योजना (Govt Schemes)" : language === "hi" ? "4. सरकारी योजनाएं (Govt Schemes)" : "4. Government Schemes",
+      title: language === "mr" ? "३. शासकीय योजना (Govt Schemes)" : language === "hi" ? "3. सरकारी योजनाएं (Govt Schemes)" : "3. Government Schemes",
       description: language === "mr" 
         ? "पीएम-किसान, सौर कृषी पंप, पीक विमा आणि शासकीय अनुदानाची माहिती." 
         : language === "hi" 
@@ -229,6 +213,22 @@ export const FarmerDashboardHome = ({ onNavigate }) => {
         : "Direct benefit transfers, solar pump subsidies, crop insurance, and state farm assistance.",
       actionLabel: language === "mr" ? "योजना पहा" : language === "hi" ? "योजनाएं देखें" : "Government Schemes",
       targetTab: "schemes"
+    },
+    {
+      id: "ai-advisory",
+      number: "4",
+      icon: "🤖",
+      iconBg: "bg-blue-50 border-blue-200/80 text-blue-700",
+      image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800&auto=format&fit=crop&q=80",
+      accentGlow: "from-blue-500/10",
+      title: language === "mr" ? "४. कृषी सल्ला (Farm Advisory)" : language === "hi" ? "4. फसल सलाह (Farm Advisory)" : "4. Farm Advisory",
+      description: language === "mr" 
+        ? "पिकांचे दैनंदिन योग्य नियोजन, रोग-कीड नियंत्रण आणि पाणी देण्याचा अचूक सल्ला." 
+        : language === "hi" 
+        ? "फसल का दैनिक प्रबंधन, मौसम चेतावनी और सिंचाई का सटीक सुझाव।" 
+        : "Personalized daily agricultural actions, weather risk alerts, and irrigation schedules.",
+      actionLabel: language === "mr" ? "कृषी सल्ला पहा" : language === "hi" ? "फसल सलाह देखें" : "Farm Advisory",
+      targetTab: "ai-advisor"
     }
   ];
 
@@ -376,7 +376,7 @@ export const FarmerDashboardHome = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* BOTTOM TELEMETRY ROW WITH INTERACTIVE ANIMATED DRIVING TRACTOR 🚜 */}
+        {/* BOTTOM TELEMETRY ROW */}
         <div className="relative pt-1 z-10">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {telemetryItems.map((item, idx) => {
@@ -396,22 +396,6 @@ export const FarmerDashboardHome = ({ onNavigate }) => {
                 </button>
               );
             })}
-          </div>
-
-          {/* Animated Interactive Driving Tractor 🚜 Positioned Under Active Pill */}
-          <div 
-            className="flex items-center pt-1.5 transition-all duration-500 ease-out"
-            style={{
-              transform: `translateX(${
-                activeTelemetryIndex === 0 ? "24px" :
-                activeTelemetryIndex === 1 ? "180px" :
-                activeTelemetryIndex === 2 ? "370px" : "580px"
-              })`
-            }}
-          >
-            <span className="text-xl inline-block animate-bounce drop-shadow-md cursor-pointer select-none" title="KrishiMitra Smart Rover">
-              🚜
-            </span>
           </div>
         </div>
       </div>

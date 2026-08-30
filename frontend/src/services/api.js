@@ -49,11 +49,22 @@ class ApiService {
       }
       
       const errData = await response.json().catch(() => ({}));
+      if (response.status === 503 || errData.code === "DATABASE_UNAVAILABLE_OFFLINE_MODE") {
+        const err = new Error(errData.message || "Database temporarily unavailable (Offline Recovery Mode)");
+        err.isDatabaseUnavailable = true;
+        err.code = "DATABASE_UNAVAILABLE_OFFLINE_MODE";
+        err.status = 503;
+        throw err;
+      }
+
       if (response.status === 400 || response.status === 401) {
         throw new Error(errData.error || "Authentication failed");
       }
       throw new Error(`HTTP Error ${response.status}`);
     } catch (err) {
+      if (err.isDatabaseUnavailable || err.status === 503) {
+        throw err;
+      }
       console.warn(`[API Network Notice] Endpoint '${endpoint}' unreachable directly, using client resilience store.`);
       return this.handleFallback(endpoint, options);
     }
@@ -74,10 +85,11 @@ class ApiService {
         location: { village: "Niphad", district: "Nashik", state: "Maharashtra" },
         farm: { name: "Patil Farm", sizeAcres: 8.5, primaryCrop: "Soybean" }
       };
+      const userProfile = { ...farmer, role: "FARMER" };
       const token = "mock-jwt-token-farmer-" + Date.now();
       localStorage.setItem("krishi_token", token);
-      localStorage.setItem("krishi_user", JSON.stringify({ ...farmer, role: "FARMER" }));
-      return { token, farmer: { ...farmer, role: "FARMER" } };
+      localStorage.setItem("krishi_user", JSON.stringify(userProfile));
+      return { token, user: userProfile, farmer: userProfile };
     }
 
     // 2. Farmer Register
@@ -94,7 +106,7 @@ class ApiService {
       const token = "mock-jwt-token-farmer-" + Date.now();
       localStorage.setItem("krishi_token", token);
       localStorage.setItem("krishi_user", JSON.stringify(newFarmer));
-      return { token, farmer: newFarmer };
+      return { token, user: newFarmer, farmer: newFarmer };
     }
 
     // 3. Labour Login
@@ -112,10 +124,11 @@ class ApiService {
         expectedDailyWage: 450,
         availability: "Immediate"
       };
+      const userProfile = { ...labour, role: "LABOUR" };
       const token = "mock-jwt-token-labour-" + Date.now();
       localStorage.setItem("krishi_token", token);
-      localStorage.setItem("krishi_user", JSON.stringify({ ...labour, role: "LABOUR" }));
-      return { token, labour: { ...labour, role: "LABOUR" } };
+      localStorage.setItem("krishi_user", JSON.stringify(userProfile));
+      return { token, user: userProfile, labour: userProfile };
     }
 
     // 4. Labour Register
@@ -138,13 +151,29 @@ class ApiService {
       const token = "mock-jwt-token-labour-" + Date.now();
       localStorage.setItem("krishi_token", token);
       localStorage.setItem("krishi_user", JSON.stringify(newLabour));
-      return { token, labour: newLabour };
+      return { token, user: newLabour, labour: newLabour };
     }
 
     // 5. Get Current User (/auth/me)
     if (endpoint === "/auth/me") {
       const user = getStoredList("krishi_user", SEED_DATA.farmers[0]);
       return { user };
+    }
+
+    // 5b. Farmer Profile (/farmer/profile)
+    if (endpoint === "/farmer/profile") {
+      const currentUser = getStoredList("krishi_user", SEED_DATA.farmers[0]);
+      if (options.method === "PUT") {
+        const updated = {
+          ...currentUser,
+          ...body,
+          location: { ...(currentUser.location || {}), ...(body.location || {}) },
+          farm: { ...(currentUser.farm || {}), ...(body.farm || {}) }
+        };
+        localStorage.setItem("krishi_user", JSON.stringify(updated));
+        return { message: "Profile updated successfully", farmer: updated, user: updated };
+      }
+      return { farmer: currentUser, user: currentUser };
     }
 
     // 6. Get Labourers (/labour)
