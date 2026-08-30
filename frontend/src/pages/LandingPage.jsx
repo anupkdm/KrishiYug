@@ -95,25 +95,38 @@ export const LandingPage = ({ onSelectAuth }) => {
         </div>
       </header>
 
-      {/* Welcoming Hero Section & Portal Gateway */}
+      {/* Welcoming Hero Section with Agricultural Background */}
       <main className="flex-1">
-        <section className="relative px-4 sm:px-6 pt-6 sm:pt-8 pb-4 max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-900 text-xs font-bold mb-3 border border-emerald-200 shadow-sm">
-            <span>🌱</span>
-            <span>{t("landing.welcomeTag")}</span>
-          </div>
+        <div className="relative overflow-hidden border-b border-emerald-200/60 bg-emerald-900/5">
+          {/* Background Agricultural Landscape Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35 transform scale-105"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&auto=format&fit=crop&q=80')`
+            }}
+          />
+          {/* Light Glassmorphic Wash Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/85 to-slate-50 backdrop-blur-[0.5px]" />
 
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight font-display max-w-3xl mx-auto leading-tight">
-            {t("landing.heroTitle")}
-          </h1>
+          {/* Hero Content */}
+          <section className="relative z-10 px-4 sm:px-6 pt-8 sm:pt-12 pb-7 sm:pb-9 max-w-5xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-emerald-900 text-xs font-black mb-3.5 border border-emerald-300 shadow-sm">
+              <span>🌱</span>
+              <span>{t("landing.welcomeTag")}</span>
+            </div>
 
-          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto mt-2.5 leading-relaxed font-medium">
-            {t("landing.heroSubtitle")}
-          </p>
-        </section>
+            <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight font-display max-w-3xl mx-auto leading-tight">
+              {t("landing.heroTitle")}
+            </h1>
+
+            <p className="text-xs sm:text-base text-slate-700 max-w-2xl mx-auto mt-3 leading-relaxed font-semibold">
+              {t("landing.heroSubtitle")}
+            </p>
+          </section>
+        </div>
 
         {/* Dual Role Gateway Cards */}
-        <section className="px-4 sm:px-6 py-4 max-w-5xl mx-auto">
+        <section className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
             {/* Farmer Card */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-emerald-500/30 hover:border-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
