@@ -400,9 +400,8 @@ class ApiService {
     return this.request(`/advisory/latest${qs ? `?${qs}` : ''}`);
   }
 
-  getAdvisoryFeed(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    return this.request(`/advisory/feed${qs ? `?${qs}` : ''}`);
+  getAdvisoryFeed(payload) {
+    return this.request("/advisory/feed", { method: "POST", body: JSON.stringify(payload) });
   }
 
   // Dashboards

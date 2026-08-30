@@ -148,13 +148,6 @@ export class AdvisoryService {
       }
     ];
 
-    // Satellite Monitoring Index Computation
-    const simulatedNdvi = Math.min(0.88, Math.max(0.22, 
-      0.48 + (soilMoisture - 30) * 0.0075 - (temp > 36 ? 0.12 : 0) - (pestRiskLevel.includes("High") ? 0.10 : 0)
-    ));
-
-    const feedResult = AdvisoryService.generateAdvisoryFeed(params);
-
     return {
       timestamp: new Date().toISOString(),
       crop,
@@ -178,14 +171,6 @@ export class AdvisoryService {
         rainfallProbability: rainfallProb,
         recentRainfallMm: telemetry.recentRainfallMm,
         windSpeedKmh: telemetry.windSpeedKmh
-      },
-      satellite: {
-        ndvi: parseFloat(simulatedNdvi.toFixed(2)),
-        ndviStatus: simulatedNdvi >= 0.65 ? "Optimal Canopy & High Chlorophyll" : simulatedNdvi >= 0.45 ? "Moderate Crop Vigor" : "Vegetation Stress Detected",
-        swi: `${Math.round(soilMoisture * 0.95 + 3)}%`,
-        canopyTemp: `${(temp - (soilMoisture > 40 ? 2.8 : -1.5)).toFixed(1)}°C`,
-        cloudCover: `${Math.min(95, Math.round(rainfallProb * 0.85 + 8))}%`,
-        satellitePass: "Sentinel-2 MSI (Refreshed 3h ago)"
       },
       advisories: {
         irrigation: {
@@ -220,15 +205,7 @@ export class AdvisoryService {
           detail: machineryAdvisory
         }
       },
-      recommendedActions,
-      feed: feedResult.advisories,
-      feedMetadata: {
-        totalAdvisories: feedResult.totalAdvisories,
-        urgentCount: feedResult.urgentCount,
-        warningCount: feedResult.warningCount,
-        opportunityCount: feedResult.opportunityCount,
-        currentConditions: feedResult.currentConditions
-      }
+      recommendedActions
     };
   }
 

@@ -6,83 +6,30 @@ import { api } from "../../services/api";
 import { ScoreGauge } from "../../components/common/ScoreGauge";
 import { Badge } from "../../components/common/Badge";
 import { 
-  BrainCircuit, 
   Droplets, 
   CloudRain, 
   Bug, 
   Sprout, 
   TrendingUp, 
-  Users, 
   Tractor, 
   Sparkles, 
   RefreshCw, 
   CheckCircle2, 
-  AlertTriangle,
-  Send,
   Zap,
   Volume2,
   Share2,
   Clock,
   MessageSquareHeart,
-  Globe,
-  Radio,
+  Activity,
   Satellite,
   Thermometer,
   Wind,
-  Layers,
-  Check,
-  Compass
+  Loader2
 } from "lucide-react";
-
-// Fallback baseline advisories if backend is bootstrapping
-const DEFAULT_FARMER_ADVISORIES = [
-  {
-    id: "ADV-501",
-    title: "Postpone Irrigation Due to Rain Forecast",
-    priority: "Urgent Alert",
-    category: "Weather Action",
-    recommendationText: "Unseasonal moderate to heavy rain (22-35mm) predicted on Friday & Saturday in Pune & Nashik districts. Postpone planned canal/drip irrigation to avoid soil waterlogging and root asphyxiation.",
-    reasonText: "Excess water combined with heavy rain causes root rot and nutrient leaching. Postponing saves water resources and prevents crop damage.",
-    validityPeriod: "Valid for next 36 hours",
-    createdAt: "Real-time Telemetry",
-    isRead: false,
-    channelAvailability: ["In-App", "SMS", "WhatsApp"],
-    dataSource: "IMD Agro-Meteorology + Soil Sensor",
-    conditions: { rainfallProb: 65, soilMoisture: 42 }
-  },
-  {
-    id: "ADV-502",
-    title: "High Risk of Pink Bollworm in Cotton Fields",
-    priority: "Warning",
-    category: "Pest Warning",
-    recommendationText: "Regional surveillance indicates rising pink bollworm moth catches in Warangal district. Install 12 Pheromone traps/hectare and inspect rosetted flowers in early morning. Apply Chlorantraniliprole 18.5% SC if moth catch exceeds 8/trap/night.",
-    reasonText: "Night humidity above 75% accelerates bollworm larval emergence. Pheromone traps enable early detection before economic threshold is breached.",
-    validityPeriod: "Valid for next 5 days",
-    createdAt: "Real-time Surveillance",
-    isRead: false,
-    channelAvailability: ["In-App", "SMS", "WhatsApp", "Voice Call"],
-    dataSource: "Humidity Sensor + ICAR Pest Model",
-    conditions: { humidity: 74, temperature: 28.5 }
-  },
-  {
-    id: "ADV-503",
-    title: "PMFBY Kharif Crop Insurance Enrollment Deadline",
-    priority: "Opportunity",
-    category: "Scheme Opportunity",
-    recommendationText: "Apply for Pradhan Mantri Fasal Bima Yojana (PMFBY) before August 31st to secure 85% subsidized insurance cover for standing Wheat/Cotton crops. Premium is only 2% for Kharif and 1.5% for Rabi crops.",
-    reasonText: "Protects against weather uncertainty and pest damage with minimal farmer premium. Satellite-based rapid loss assessment ensures claim settlement within 21 days.",
-    validityPeriod: "Valid until Aug 31, 2026",
-    createdAt: "Scheme Notification",
-    isRead: true,
-    channelAvailability: ["In-App", "WhatsApp"],
-    dataSource: "Ministry of Agriculture & Farmers Welfare",
-    conditions: {}
-  }
-];
 
 export const AIFarmAdvisorTab = () => {
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const { telemetry } = useSimulation();
 
   const [formInputs, setFormInputs] = useState({
@@ -95,7 +42,6 @@ export const AIFarmAdvisorTab = () => {
     humidity: telemetry.humidity || 74,
     rainfallProb: telemetry.rainfallProbNext24h || 65,
     recentRainfallMm: telemetry.recentRainfallMm || 12,
-    windSpeed: telemetry.windSpeedKmh || 14.2,
     irrigationType: user?.farm?.irrigationSource || "Drip & Tube Well",
     pestSymptoms: "Slight leaf edge curling and minor caterpillar observation",
     farmSize: user?.farm?.sizeAcres || 8.5
@@ -105,47 +51,77 @@ export const AIFarmAdvisorTab = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // Advisory feed state
+  // Dynamic advisory feed state
+  const [feedData, setFeedData] = useState(null);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [playingAudioId, setPlayingAudioId] = useState(null);
   const [readAdvisories, setReadAdvisories] = useState(new Set());
   const [filterPriority, setFilterPriority] = useState("All");
-  const [copiedId, setCopiedId] = useState(null);
 
-  // Synchronize telemetry changes from simulation context into form inputs
-  useEffect(() => {
-    setFormInputs(prev => ({
-      ...prev,
-      soilMoisture: telemetry.soilMoisture ?? prev.soilMoisture,
-      temperature: telemetry.temperature ?? prev.temperature,
-      humidity: telemetry.humidity ?? prev.humidity,
-      rainfallProb: telemetry.rainfallProbNext24h ?? prev.rainfallProb,
-      recentRainfallMm: telemetry.recentRainfallMm ?? prev.recentRainfallMm,
-      windSpeed: telemetry.windSpeedKmh ?? prev.windSpeed
-    }));
-  }, [telemetry.soilMoisture, telemetry.temperature, telemetry.humidity, telemetry.rainfallProbNext24h, telemetry.windSpeedKmh]);
-
+  // ─── Fetch AI Advisory Report ──────────────────────────────────────
   const fetchAdvisory = async () => {
     setLoading(true);
     try {
       const res = await api.generateAdvisory(formInputs);
       setAdvisoryReport(res);
     } catch (err) {
-      console.error("Advisory generation error:", err);
+      console.error("Advisory error:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // ─── Fetch Dynamic Advisory Feed (condition-based) ─────────────────
+  const fetchAdvisoryFeed = async () => {
+    setFeedLoading(true);
+    try {
+      const res = await api.getAdvisoryFeed({
+        crop: formInputs.crop,
+        growthStage: formInputs.growthStage,
+        soilMoisture: formInputs.soilMoisture,
+        temperature: formInputs.temperature,
+        humidity: formInputs.humidity,
+        rainfallProb: formInputs.rainfallProb,
+        recentRainfallMm: formInputs.recentRainfallMm,
+        farmSize: formInputs.farmSize,
+        farmLocation: formInputs.farmLocation,
+        windSpeed: telemetry.windSpeedKmh || 14.2
+      });
+      setFeedData(res);
+    } catch (err) {
+      console.error("Advisory feed error:", err);
+    } finally {
+      setFeedLoading(false);
+    }
+  };
+
+  // Fetch on mount and when telemetry changes
   useEffect(() => {
     fetchAdvisory();
-  }, [telemetry.soilMoisture, telemetry.temperature, telemetry.rainfallProbNext24h]);
+    fetchAdvisoryFeed();
+  }, [telemetry.soilMoisture, telemetry.temperature]);
+
+  // Re-sync form inputs when telemetry updates from simulation
+  useEffect(() => {
+    setFormInputs(prev => ({
+      ...prev,
+      soilMoisture: telemetry.soilMoisture || prev.soilMoisture,
+      temperature: telemetry.temperature || prev.temperature,
+      humidity: telemetry.humidity || prev.humidity,
+      rainfallProb: telemetry.rainfallProbNext24h || prev.rainfallProb,
+      recentRainfallMm: telemetry.recentRainfallMm || prev.recentRainfallMm,
+    }));
+  }, [telemetry]);
 
   const handleGenerate = async (e) => {
     e.preventDefault();
     setGenerating(true);
     try {
-      const res = await api.generateAdvisory(formInputs);
-      setAdvisoryReport(res);
+      const [reportRes] = await Promise.all([
+        api.generateAdvisory(formInputs),
+        fetchAdvisoryFeed() // also refresh feed with new params
+      ]);
+      setAdvisoryReport(reportRes);
     } catch (err) {
       alert("Advisory generation failed: " + err.message);
     } finally {
@@ -153,34 +129,12 @@ export const AIFarmAdvisorTab = () => {
     }
   };
 
-  // Text-to-Speech audio simulation & Web Speech API integration
-  const handleSimulateAudio = (advisory) => {
-    if (playingAudioId === advisory.id) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+  const handleSimulateAudio = (id) => {
+    if (playingAudioId === id) {
       setPlayingAudioId(null);
-      return;
-    }
-
-    setPlayingAudioId(advisory.id);
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const textToSpeak = `${advisory.title}. ${advisory.recommendationText}`;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      
-      if (language === 'hi') utterance.lang = 'hi-IN';
-      else if (language === 'mr') utterance.lang = 'mr-IN';
-      else utterance.lang = 'en-IN';
-
-      utterance.onend = () => setPlayingAudioId(null);
-      utterance.onerror = () => setPlayingAudioId(null);
-      window.speechSynthesis.speak(utterance);
     } else {
-      setTimeout(() => setPlayingAudioId(null), 4500);
+      setPlayingAudioId(id);
+      setTimeout(() => setPlayingAudioId(null), 4000);
     }
   };
 
@@ -189,39 +143,26 @@ export const AIFarmAdvisorTab = () => {
   };
 
   const handleShare = (advisory) => {
-    const text = `🌾 *KrishiYug AI Farm Advisory*\n\n📌 *${advisory.title}*\n🚨 *Priority:* ${advisory.priority} | 🏷️ *Category:* ${advisory.category}\n\n💡 *Actionable Advice:* \n${advisory.recommendationText}\n\n🔬 *Scientific Agronomic Basis:* \n${advisory.reasonText}\n\n⏳ *Validity:* ${advisory.validityPeriod}\n📡 *Data Source:* ${advisory.dataSource || "Satellite & Ground Sensor Mesh"}\n\n🌱 _Empowering Indian Agriculture through KrishiYug_`;
-    
+    const text = `🌾 KrishiYug Advisory\n\n📋 ${advisory.title}\n\n${advisory.recommendationText}\n\n🔬 Reason: ${advisory.reasonText}\n\n📊 Data Source: ${advisory.dataSource}\n⏳ ${advisory.validityPeriod}`;
     if (navigator.share) {
       navigator.share({ title: advisory.title, text }).catch(() => {});
     } else {
       navigator.clipboard.writeText(text).then(() => {
-        setCopiedId(advisory.id);
-        setTimeout(() => setCopiedId(null), 2500);
+        alert("Advisory copied to clipboard! Share via WhatsApp.");
       });
     }
   };
 
-  // Effective dynamic feed items from backend response
-  const advisoriesList = (advisoryReport?.feed && advisoryReport.feed.length > 0)
-    ? advisoryReport.feed
-    : DEFAULT_FARMER_ADVISORIES;
-
+  const advisoryList = feedData?.advisories || [];
   const filteredAdvisories = filterPriority === "All" 
-    ? advisoriesList 
-    : advisoriesList.filter(a => a.priority === filterPriority);
+    ? advisoryList 
+    : advisoryList.filter(a => a.priority === filterPriority);
 
-  const unreadCount = advisoriesList.filter(a => !readAdvisories.has(a.id)).length;
+  const unreadCount = advisoryList.filter(a => !readAdvisories.has(a.id)).length;
+  const conditions = feedData?.currentConditions || {};
 
   const scores = advisoryReport?.scores || {};
   const adv = advisoryReport?.advisories || {};
-  const sat = advisoryReport?.satellite || {
-    ndvi: 0.68,
-    ndviStatus: "Optimal Canopy & High Chlorophyll",
-    swi: "44%",
-    canopyTemp: "26.8°C",
-    cloudCover: "58%",
-    satellitePass: "Sentinel-2 MSI (Refreshed 3h ago)"
-  };
 
   const submetrics = [
     { label: "Crop Health", score: scores.cropHealth || 88 },
@@ -233,132 +174,41 @@ export const AIFarmAdvisorTab = () => {
   ];
 
   const priorityConfig = {
-    "Urgent Alert": { bg: "bg-red-500", text: "text-white", border: "border-red-300", cardBorder: "border-red-300 hover:border-red-500 ring-red-100" },
-    "Warning": { bg: "bg-amber-500", text: "text-slate-950", border: "border-amber-300", cardBorder: "border-amber-300 hover:border-amber-500 ring-amber-100" },
-    "Opportunity": { bg: "bg-emerald-500", text: "text-white", border: "border-emerald-300", cardBorder: "border-emerald-300 hover:border-emerald-500 ring-emerald-100" },
-    "General Advisory": { bg: "bg-sky-500", text: "text-white", border: "border-sky-300", cardBorder: "border-sky-300 hover:border-sky-500 ring-sky-100" }
+    "Urgent Alert": { bg: "bg-red-500", text: "text-white", cardBorder: "border-red-200 hover:border-red-400", icon: "🔴" },
+    "Warning": { bg: "bg-amber-500", text: "text-slate-950", cardBorder: "border-amber-200 hover:border-amber-400", icon: "🟡" },
+    "Opportunity": { bg: "bg-emerald-500", text: "text-white", cardBorder: "border-emerald-200 hover:border-emerald-400", icon: "🟢" },
+    "General Advisory": { bg: "bg-sky-500", text: "text-white", cardBorder: "border-sky-200 hover:border-sky-400", icon: "🔵" }
   };
 
   return (
     <div className="space-y-8 pb-12">
-      {/* ─── Header ─────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
-              <Radio className="w-3 h-3 text-emerald-600 animate-pulse" />
-              Live Agro-Intelligence Engine
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-200">
+              AI Agricultural Decision Engine
             </span>
-            <span className="text-xs font-bold text-slate-400">• Soil · Weather · Satellite NDVI</span>
+            <span className="text-xs font-bold text-slate-400">• Real-Time Condition Analysis</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 font-display mt-1">
             AI Farm Advisor & Decision Matrix
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time condition synthesis combining telemetry sensors, IMD meteorological radar, Sentinel-2 satellite canopy reflectance, and APMC mandi algorithms.
+            Dynamic advisories driven by live telemetry sensors, weather models, satellite NDVI, soil status, pest surveillance, and mandi data.
           </p>
         </div>
 
         <button
-          onClick={fetchAdvisory}
-          disabled={loading}
-          className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center gap-2 self-start sm:self-auto shadow-sm active:scale-95 disabled:opacity-50"
+          onClick={() => { fetchAdvisory(); fetchAdvisoryFeed(); }}
+          className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center gap-1.5 self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-emerald-600" : ""}`} />
-          <span>{loading ? "Synthesizing Telemetry..." : "Re-evaluate Advisory"}</span>
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Re-evaluate Advisory</span>
         </button>
       </div>
 
-      {/* ─── LIVE SATELLITE & TELEMETRY DIAGNOSTIC RIBBON ────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* 1. Sentinel-2 NDVI */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Satellite NDVI</span>
-            <Satellite className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-emerald-700">{sat.ndvi}</div>
-            <div className="text-[10px] font-semibold text-slate-600 truncate">{sat.ndviStatus}</div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">Sentinel-2 (B4/B8)</span>
-        </div>
-
-        {/* 2. Soil Moisture */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Soil Moisture</span>
-            <Droplets className="w-4 h-4 text-sky-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-sky-700">{formInputs.soilMoisture}%</div>
-            <div className="text-[10px] font-semibold text-slate-600">
-              {formInputs.soilMoisture < 30 ? "Critical Deficit" : formInputs.soilMoisture <= 60 ? "Optimal Root Zone" : "Saturated / Drainage"}
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">Capacitive Probe #1</span>
-        </div>
-
-        {/* 3. Ambient Temp & Canopy */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Temp / Canopy</span>
-            <Thermometer className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-amber-700">{formInputs.temperature}°C</div>
-            <div className="text-[10px] font-semibold text-slate-600">Canopy: {sat.canopyTemp}</div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">Thermal Infrared</span>
-        </div>
-
-        {/* 4. Rainfall Probability */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">24h Rain Prob</span>
-            <CloudRain className="w-4 h-4 text-indigo-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-indigo-700">{formInputs.rainfallProb}%</div>
-            <div className="text-[10px] font-semibold text-slate-600">
-              {formInputs.rainfallProb > 60 ? "Heavy Rain Window" : formInputs.rainfallProb > 35 ? "Moderate Showers" : "Dry Window"}
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">IMD Radar Ensemble</span>
-        </div>
-
-        {/* 5. Humidity & Pest Vigor */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Air Humidity</span>
-            <Bug className="w-4 h-4 text-rose-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-rose-700">{formInputs.humidity}%</div>
-            <div className="text-[10px] font-semibold text-slate-600">
-              {formInputs.humidity > 75 ? "High Pest Emergence" : "Normal Pressure"}
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">ICAR Surveillance</span>
-        </div>
-
-        {/* 6. Wind Speed & Spraying */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider">Wind Speed</span>
-            <Wind className="w-4 h-4 text-teal-600" />
-          </div>
-          <div className="my-1.5">
-            <div className="text-xl font-black text-teal-700">{formInputs.windSpeed} km/h</div>
-            <div className="text-[10px] font-semibold text-slate-600">
-              {formInputs.windSpeed > 20 ? "Spraying Restricted" : "Safe for Foliar Spray"}
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-400 truncate">Anemometer #02</span>
-        </div>
-      </div>
-
-      {/* ─── Composite Farm Intelligence Score Gauge ────────────────── */}
+      {/* Farm Intelligence Score */}
       <ScoreGauge
         score={advisoryReport?.overallFarmIntelligenceScore || 84}
         max={100}
@@ -366,13 +216,45 @@ export const AIFarmAdvisorTab = () => {
         submetrics={submetrics}
       />
 
-      {/* ─── PERSONALIZED REAL-TIME ADVISORY FEED ──────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          LIVE CONDITIONS DASHBOARD
+          ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="w-4 h-4 text-emerald-600" />
+          <h3 className="text-sm font-bold text-slate-900 font-display">Current Conditions Driving Advisories</h3>
+          <span className="text-[10px] text-slate-400 font-bold ml-auto">
+            Last updated: {feedData?.generatedAt ? new Date(feedData.generatedAt).toLocaleTimeString("en-IN") : "—"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+          {[
+            { label: "Soil Moisture", value: `${conditions.soilMoisture || formInputs.soilMoisture}%`, icon: Droplets, color: "text-sky-600 bg-sky-50 border-sky-200" },
+            { label: "Temperature", value: `${conditions.temperature || formInputs.temperature}°C`, icon: Thermometer, color: "text-rose-600 bg-rose-50 border-rose-200" },
+            { label: "Humidity", value: `${conditions.humidity || formInputs.humidity}%`, icon: CloudRain, color: "text-blue-600 bg-blue-50 border-blue-200" },
+            { label: "Rain Prob", value: `${conditions.rainfallProbability || formInputs.rainfallProb}%`, icon: CloudRain, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+            { label: "Recent Rain", value: `${conditions.recentRainfallMm || formInputs.recentRainfallMm}mm`, icon: Droplets, color: "text-cyan-600 bg-cyan-50 border-cyan-200" },
+            { label: "Wind", value: `${conditions.windSpeedKmh || 14.2} km/h`, icon: Wind, color: "text-slate-600 bg-slate-50 border-slate-200" },
+            { label: "NDVI", value: conditions.simulatedNdvi || "—", icon: Satellite, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+          ].map((item) => (
+            <div key={item.label} className={`p-2.5 rounded-xl border ${item.color} text-center`}>
+              <item.icon className="w-4 h-4 mx-auto mb-1" />
+              <div className="text-[10px] font-bold uppercase tracking-wider opacity-70">{item.label}</div>
+              <div className="text-sm font-extrabold">{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          DYNAMIC ADVISORY FEED (condition-based, from backend)
+          ═══════════════════════════════════════════════════════════════════ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-        {/* Feed Header & Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        {/* Feed Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-emerald-700 text-xs font-bold uppercase tracking-wider mb-1">
-              <MessageSquareHeart className="w-4 h-4" /> Live Condition-Driven Recommendations
+              <MessageSquareHeart className="w-4 h-4" /> Condition-Based Advisory Feed
               {unreadCount > 0 && (
                 <span className="ml-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black animate-pulse">
                   {unreadCount} NEW
@@ -380,192 +262,174 @@ export const AIFarmAdvisorTab = () => {
               )}
             </div>
             <h2 className="text-lg font-extrabold text-slate-900 font-display">
-              Actionable Farm-Level Advisories ({filteredAdvisories.length})
+              Real-Time Farm Recommendations
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Dynamically generated based on live sensor readings, satellite multi-spectral analysis, and weather forecasts.
+              Each advisory below is triggered by actual sensor thresholds — weather, soil, satellite NDVI, pest models, and market dynamics.
             </p>
           </div>
 
-          {/* Priority Filter Badges */}
+          {/* Priority Filter + Count Badges */}
           <div className="flex items-center gap-2 flex-wrap">
-            {["All", "Urgent Alert", "Warning", "Opportunity"].map(p => {
-              const count = p === "All" ? advisoriesList.length : advisoriesList.filter(a => a.priority === p).length;
+            {["All", "Urgent Alert", "Warning", "Opportunity"].map(p => (
+              <button
+                key={p}
+                onClick={() => setFilterPriority(p)}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${
+                  filterPriority === p 
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-md" 
+                    : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50"
+                }`}
+              >
+                {p === "All" ? `All (${advisoryList.length})` 
+                  : p === "Urgent Alert" ? `🔴 Urgent (${feedData?.urgentCount || 0})`
+                  : p === "Warning" ? `🟡 Warning (${feedData?.warningCount || 0})`
+                  : `🟢 Opportunity (${feedData?.opportunityCount || 0})`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {feedLoading && (
+          <div className="text-center py-8">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
+            <p className="text-xs text-slate-500 font-medium">Analyzing conditions & generating advisories...</p>
+          </div>
+        )}
+
+        {/* No advisories */}
+        {!feedLoading && filteredAdvisories.length === 0 && (
+          <div className="text-center py-8">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-slate-700">All Clear!</p>
+            <p className="text-xs text-slate-500 mt-1">No advisories triggered under current conditions. Your farm parameters are within optimal ranges.</p>
+          </div>
+        )}
+
+        {/* Advisory Feed Cards */}
+        {!feedLoading && (
+          <div className="space-y-4">
+            {filteredAdvisories.map((advisory) => {
+              const config = priorityConfig[advisory.priority] || priorityConfig["General Advisory"];
+              const isRead = readAdvisories.has(advisory.id);
+
               return (
-                <button
-                  key={p}
-                  onClick={() => setFilterPriority(p)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border flex items-center gap-1.5 ${
-                    filterPriority === p 
-                      ? "bg-emerald-700 text-white border-emerald-700 shadow-sm" 
-                      : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50"
-                  }`}
+                <div 
+                  key={advisory.id}
+                  className={`p-5 sm:p-6 rounded-2xl bg-white border-2 ${config.cardBorder} space-y-4 shadow-sm transition-all ${!isRead ? "ring-1 ring-emerald-200/50" : "opacity-90"}`}
+                  onClick={() => markAsRead(advisory.id)}
                 >
-                  <span>{p}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${filterPriority === p ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
-                    {count}
-                  </span>
-                </button>
+                  {/* Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase ${config.bg} ${config.text}`}>
+                        {advisory.priority} · {advisory.category}
+                      </span>
+                      {advisory.targetFarmerName && (
+                        <span className="text-xs text-slate-500 font-semibold">
+                          For: {advisory.targetFarmerName}
+                        </span>
+                      )}
+                      {!isRead && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Unread" />
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>{advisory.validityPeriod}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-extrabold text-base text-slate-900 font-display">{advisory.title}</h3>
+                  
+                  {/* Recommendation */}
+                  <p className="text-sm text-slate-700 leading-relaxed p-4 rounded-2xl bg-slate-50 border border-slate-100 font-medium">
+                    "{advisory.recommendationText}"
+                  </p>
+
+                  {/* Scientific Reason */}
+                  <div className="text-xs text-slate-600">
+                    <strong className="text-emerald-700">🔬 Scientific Reason:</strong> {advisory.reasonText}
+                  </div>
+
+                  {/* Data Source + Conditions */}
+                  <div className="flex items-center gap-3 flex-wrap text-[10px]">
+                    {advisory.dataSource && (
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                        📡 {advisory.dataSource}
+                      </span>
+                    )}
+                    {advisory.conditions && Object.entries(advisory.conditions).slice(0, 3).map(([key, val]) => (
+                      <span key={key} className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 font-bold border border-slate-200">
+                        {key}: {typeof val === "number" ? val.toFixed?.(1) || val : val}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Channel + Action Buttons */}
+                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                    {/* Channel badges */}
+                    <div className="flex items-center gap-1 mr-2">
+                      {advisory.channelAvailability?.map(ch => (
+                        <span key={ch} className="px-1.5 py-0.5 rounded text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-100">
+                          {ch}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Audio Playback */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSimulateAudio(advisory.id); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                        playingAudioId === advisory.id 
+                          ? "bg-amber-500 text-white animate-pulse shadow-md" 
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                      }`}
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{playingAudioId === advisory.id ? "Playing..." : "Listen"}</span>
+                    </button>
+
+                    {/* Share */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleShare(advisory); }}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Share</span>
+                    </button>
+
+                    {/* Read Status */}
+                    {isRead && (
+                      <span className="ml-auto text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Read
+                      </span>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
-
-        {/* Advisory Feed Cards */}
-        <div className="space-y-4">
-          {filteredAdvisories.map((advisory) => {
-            const config = priorityConfig[advisory.priority] || priorityConfig["General Advisory"];
-            const isRead = readAdvisories.has(advisory.id);
-
-            return (
-              <div 
-                key={advisory.id}
-                className={`p-5 sm:p-6 rounded-2xl bg-white border-2 ${config.cardBorder} space-y-4 shadow-sm transition-all relative ${!isRead ? "ring-2 ring-opacity-60" : "opacity-90"}`}
-                onClick={() => markAsRead(advisory.id)}
-              >
-                {/* Card Header & Metadata */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-3 py-1 rounded-full text-[11px] font-extrabold uppercase ${config.bg} ${config.text}`}>
-                      {advisory.priority} · {advisory.category}
-                    </span>
-                    {advisory.dataSource && (
-                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 flex items-center gap-1">
-                        <Satellite className="w-3 h-3 text-emerald-600" />
-                        {advisory.dataSource}
-                      </span>
-                    )}
-                    {!isRead && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Unread advisory" />
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>{advisory.validityPeriod}</span>
-                  </div>
-                </div>
-
-                {/* Title */}
-                <h3 className="font-extrabold text-base text-slate-900 font-display">{advisory.title}</h3>
-                
-                {/* Recommendation Box */}
-                <p className="text-sm text-slate-700 leading-relaxed p-4 rounded-2xl bg-slate-50 border border-slate-100 font-medium">
-                  "{advisory.recommendationText}"
-                </p>
-
-                {/* Scientific Reason & Agronomic Basis */}
-                <div className="text-xs text-slate-600 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/60">
-                  <strong className="text-emerald-800">🔬 Scientific & Agronomic Rationale:</strong> {advisory.reasonText}
-                </div>
-
-                {/* Conditions / Trigger Telemetry */}
-                {advisory.conditions && Object.keys(advisory.conditions).length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500">
-                    <span className="font-bold text-slate-600">⚡ Condition Triggers:</span>
-                    {advisory.conditions.rainfallProb !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
-                        Rain: {advisory.conditions.rainfallProb}%
-                      </span>
-                    )}
-                    {advisory.conditions.soilMoisture !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-700 font-semibold border border-sky-100">
-                        Moisture: {advisory.conditions.soilMoisture}%
-                      </span>
-                    )}
-                    {advisory.conditions.temperature !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold border border-amber-100">
-                        Temp: {advisory.conditions.temperature}°C
-                      </span>
-                    )}
-                    {advisory.conditions.humidity !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold border border-rose-100">
-                        Humidity: {advisory.conditions.humidity}%
-                      </span>
-                    )}
-                    {advisory.conditions.windSpeed !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-semibold border border-teal-100">
-                        Wind: {advisory.conditions.windSpeed} km/h
-                      </span>
-                    )}
-                    {advisory.conditions.ndvi !== undefined && (
-                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">
-                        NDVI: {advisory.conditions.ndvi.toFixed ? advisory.conditions.ndvi.toFixed(2) : advisory.conditions.ndvi}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Bar (Audio Playback, WhatsApp Share, Channel Badges) */}
-                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Audio Playback Button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleSimulateAudio(advisory); }}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
-                        playingAudioId === advisory.id 
-                          ? "bg-amber-500 text-slate-950 animate-pulse font-black" 
-                          : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                      }`}
-                    >
-                      <Volume2 className="w-4 h-4" />
-                      <span>{playingAudioId === advisory.id ? "Playing Voice Audio..." : `Listen Audio (${language === "hi" ? "Hindi" : language === "mr" ? "Marathi" : "English"})`}</span>
-                    </button>
-
-                    {/* WhatsApp / SMS Share */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleShare(advisory); }}
-                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
-                    >
-                      {copiedId === advisory.id ? (
-                        <>
-                          <Check className="w-4 h-4 text-emerald-600" />
-                          <span className="text-emerald-700">Copied to Clipboard!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Share2 className="w-4 h-4 text-emerald-600" />
-                          <span>Share via WhatsApp / SMS</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Channel Badges & Read Status */}
-                  <div className="flex items-center gap-1.5">
-                    {advisory.channelAvailability?.map(ch => (
-                      <span key={ch} className="px-2 py-0.5 rounded-lg bg-slate-100 text-[10px] font-bold text-slate-500 border border-slate-200">
-                        {ch}
-                      </span>
-                    ))}
-                    {isRead && (
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 ml-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Read
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        )}
       </div>
 
-      {/* ─── REAL-TIME TELEMETRY ADJUSTMENT & SIMULATION FORM ────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          INTERACTIVE SIMULATION & PARAMETER FORM
+          ═══════════════════════════════════════════════════════════════════ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-slate-900 font-display">
-              Adjust Farm Telemetry & Test Environmental Scenarios
-            </h2>
-          </div>
-          <span className="text-xs text-slate-400">Sliders trigger instant re-evaluation</span>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-5 h-5 text-emerald-600" />
+          <h2 className="text-lg font-bold text-slate-900 font-display">
+            Adjust Farm Parameters & Telemetry Inputs
+          </h2>
+          <span className="text-[10px] text-slate-400 font-bold ml-2">Change values → advisories auto-update</span>
         </div>
 
         <form onSubmit={handleGenerate} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* Crop Select */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Crop
@@ -573,7 +437,7 @@ export const AIFarmAdvisorTab = () => {
               <select
                 value={formInputs.crop}
                 onChange={(e) => setFormInputs({ ...formInputs, crop: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium bg-white focus:outline-emerald-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium bg-white"
               >
                 <option value="Soybean">Soybean</option>
                 <option value="Wheat">Wheat</option>
@@ -585,24 +449,18 @@ export const AIFarmAdvisorTab = () => {
               </select>
             </div>
 
-            {/* Growth Stage */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Crop Stage
+                Crop Growth Stage
               </label>
-              <select
+              <input
+                type="text"
                 value={formInputs.growthStage}
                 onChange={(e) => setFormInputs({ ...formInputs, growthStage: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium bg-white focus:outline-emerald-500"
-              >
-                <option value="Vegetative / Tillering">Vegetative / Tillering</option>
-                <option value="Flowering & Pod Initiation">Flowering & Pod Initiation</option>
-                <option value="Pod Filling & Maturation">Pod Filling & Maturation</option>
-                <option value="Harvest Readiness">Harvest Readiness</option>
-              </select>
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
+              />
             </div>
 
-            {/* Soil Moisture Slider */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Soil Moisture ({formInputs.soilMoisture}%)
@@ -613,18 +471,13 @@ export const AIFarmAdvisorTab = () => {
                 max="85"
                 value={formInputs.soilMoisture}
                 onChange={(e) => setFormInputs({ ...formInputs, soilMoisture: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 mt-2"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 mt-2"
               />
-              <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
-                <span>15% (Dry)</span>
-                <span>85% (Wet)</span>
-              </div>
             </div>
 
-            {/* Rainfall Probability */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                24h Rain Prob ({formInputs.rainfallProb}%)
+                Rainfall Prob Next 24h ({formInputs.rainfallProb}%)
               </label>
               <input
                 type="range"
@@ -632,78 +485,38 @@ export const AIFarmAdvisorTab = () => {
                 max="100"
                 value={formInputs.rainfallProb}
                 onChange={(e) => setFormInputs({ ...formInputs, rainfallProb: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 mt-2"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 mt-2"
               />
-              <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
-                <span>0% (Clear)</span>
-                <span>100% (Storm)</span>
-              </div>
-            </div>
-
-            {/* Temperature */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Temperature ({formInputs.temperature}°C)
-              </label>
-              <input
-                type="range"
-                min="15"
-                max="48"
-                value={formInputs.temperature}
-                onChange={(e) => setFormInputs({ ...formInputs, temperature: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600 mt-2"
-              />
-              <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
-                <span>15°C</span>
-                <span>48°C (Heat)</span>
-              </div>
-            </div>
-
-            {/* Humidity */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Air Humidity ({formInputs.humidity}%)
-              </label>
-              <input
-                type="range"
-                min="20"
-                max="98"
-                value={formInputs.humidity}
-                onChange={(e) => setFormInputs({ ...formInputs, humidity: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600 mt-2"
-              />
-              <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
-                <span>20% (Dry)</span>
-                <span>98% (Pest)</span>
-              </div>
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Observed Field Symptoms & Pest Flags
+              Observed Pest Symptoms / Crop Stress Flags
             </label>
             <input
               type="text"
               value={formInputs.pestSymptoms}
               onChange={(e) => setFormInputs({ ...formInputs, pestSymptoms: e.target.value })}
-              placeholder="e.g. Spodoptera caterpillar, leaf yellowing, whitefly incidence, anthracnose spots..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-emerald-500"
+              placeholder="e.g. Spodoptera caterpillar, leaf yellowing, whitefly incidence..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
             />
           </div>
 
           <button
             type="submit"
             disabled={generating}
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-agri-600 hover:bg-agri-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Zap className="w-4 h-4 text-amber-300" />
-            <span>{generating ? "Evaluating Sensor & Satellite Multi-Models..." : "Run AI Advisory Synthesis"}</span>
+            <span>{generating ? "Evaluating AI Decision Models..." : "Run AI Advisory Synthesis"}</span>
           </button>
         </form>
       </div>
 
-      {/* ─── DETAILED DIAGNOSTIC CARDS GRID ──────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          AI ADVISORY CARDS (existing design preserved)
+          ═══════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 1. Irrigation Advisory */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-3">
@@ -744,9 +557,7 @@ export const AIFarmAdvisorTab = () => {
                 <span className="text-[10px] text-slate-400 font-semibold">IMD Agro-Meteorology</span>
               </div>
             </div>
-            <Badge variant={formInputs.rainfallProb > 60 ? "danger" : formInputs.rainfallProb > 30 ? "warning" : "success"}>
-              {formInputs.rainfallProb > 60 ? "Rain Threat" : "Convective Alert"}
-            </Badge>
+            <Badge variant="warning">Convective Alert</Badge>
           </div>
 
           <h4 className="font-bold text-xs text-slate-900">{adv.weather?.title}</h4>
@@ -786,7 +597,7 @@ export const AIFarmAdvisorTab = () => {
           </div>
         </div>
 
-        {/* 4. Crop Health & Satellite Diagnostics */}
+        {/* 4. Crop Health & Vigor */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -794,29 +605,25 @@ export const AIFarmAdvisorTab = () => {
                 <Sprout className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-900 font-display">Satellite Crop Health Diagnostics</h3>
-                <span className="text-[10px] text-slate-400 font-semibold">Canopy & Chlorophyll Index</span>
+                <h3 className="font-bold text-sm text-slate-900 font-display">Crop Health Diagnostics</h3>
+                <span className="text-[10px] text-slate-400 font-semibold">Canopy & Chlorophyll Analysis</span>
               </div>
             </div>
-            <Badge variant="success">{adv.cropHealth?.score || 88}% Vigor Score</Badge>
+            <Badge variant="success">{adv.cropHealth?.score || 88}% Healthy</Badge>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
             {adv.cropHealth?.detail}
           </p>
 
-          <div className="pt-2 border-t border-slate-100 grid grid-cols-3 gap-2 text-xs">
-            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] text-slate-400">NDVI Index</div>
-              <div className="font-bold text-emerald-700">{sat.ndvi}</div>
+          <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="text-[10px] text-slate-400">Nitrogen / Nodules</div>
+              <div className="font-bold text-slate-900">Optimal (Active)</div>
             </div>
-            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] text-slate-400">Soil Water (SWI)</div>
-              <div className="font-bold text-sky-700">{sat.swi}</div>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <div className="text-[10px] text-slate-400">Soil pH</div>
-              <div className="font-bold text-slate-900">{user?.farm?.soilPH || 7.2}</div>
+              <div className="font-bold text-slate-900">{user?.farm?.soilPH || 7.2} (Neutral)</div>
             </div>
           </div>
         </div>
