@@ -14,6 +14,18 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
   const { user, logout, isFarmer } = useAuth();
   const { t } = useLanguage();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const handleToggle = () => {
     if (onToggleSidebar) {
@@ -46,6 +58,13 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Offline Status Tag */}
+          {isOffline && (
+            <span className="text-[10px] font-black px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1 shadow-xs animate-pulse">
+              📡 <span className="hidden sm:inline">Offline Mode</span>
+            </span>
+          )}
+
           {/* Language Selector */}
           <LanguageSelector />
 
