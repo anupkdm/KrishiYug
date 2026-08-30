@@ -431,6 +431,61 @@ export default async function handler(req, res) {
     if (path.includes("/machinery")) return res.status(200).json({ machinery: SEED_DATA.machinery });
     if (path.includes("/notifications")) return res.status(200).json({ notifications: SEED_DATA.notifications });
 
+    // 11. Advisory Handlers
+    if (path.includes("/advisory")) {
+      const crop = body.crop || "Soybean";
+      const farmSize = body.farmSize || 8.5;
+      const rainfallProb = body.rainfallProb !== undefined ? body.rainfallProb : 65;
+      const humidity = body.humidity !== undefined ? body.humidity : 80;
+      const temp = body.temperature !== undefined ? body.temperature : 24.6;
+
+      return res.status(200).json({
+        overallFarmIntelligenceScore: 84,
+        scores: {
+          overall: 84,
+          cropHealth: 88,
+          waterManagement: 88,
+          weatherRisk: 82,
+          pestRisk: 48,
+          marketOpportunity: 89,
+          labourReadiness: 82
+        },
+        advisories: {
+          irrigation: {
+            status: rainfallProb > 50 ? "Postpone Irrigation" : "Adequate",
+            urgency: rainfallProb > 50 ? "Hold" : "Normal",
+            waterRequirementMm: 0,
+            recommendation: `High probability of rainfall (${rainfallProb}%). Postpone irrigation to avoid waterlogging in ${crop}.`
+          },
+          weather: {
+            title: "Favorable Weather with Convective Rainfall Risk",
+            detail: `Ambient temperature ${temp}°C with ${humidity}% relative humidity. Expected 25-35mm localized convective showers.`
+          },
+          pestAndDisease: {
+            riskLevel: humidity > 70 ? "High (Spodoptera / Pink Bollworm)" : "Moderate",
+            score: 48,
+            assessment: "Elevated humidity and ambient warmth favor Spodoptera and bollworm incidence.",
+            organicRemedy: "Install Pheromone Traps (5/acre) + Neem Oil (NSKE 5%) spray.",
+            chemicalRemedy: "Chlorantraniliprole 18.5% SC @ 0.3ml/L if threshold exceeds."
+          },
+          cropHealth: {
+            score: 88,
+            detail: "Crop canopy vigor index is healthy with active nodulation."
+          },
+          market: {
+            detail: `${crop} APMC Mandi prices trending upward (+4.2%). Favorable selling window.`
+          },
+          labour: {
+            workersRecommended: Math.max(4, Math.ceil(farmSize * 1.2)),
+            detail: `Reserve ${Math.max(4, Math.ceil(farmSize * 1.2))} workers 7-10 days in advance to avoid peak harvest wage surges.`
+          },
+          machinery: {
+            detail: `Combine harvester recommended for ${farmSize} acres of ${crop}.`
+          }
+        }
+      });
+    }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Serverless route error:", err);
