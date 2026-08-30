@@ -47,7 +47,7 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-xl tracking-tight text-slate-900 font-display">
-                  Krishi<span className="text-emerald-600">Mitra</span>
+                  Krishi<span className="text-emerald-600">Yug</span>
                 </span>
                 <span className="hidden md:inline-flex px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
                   {t("common.portal")}
