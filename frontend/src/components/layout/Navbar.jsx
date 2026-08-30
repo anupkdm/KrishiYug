@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageSelector } from "../common/LanguageSelector";
+import { KrishiYugLogo } from "../common/KrishiYugLogo";
 import { 
-  Sprout, 
   User, 
   LogOut, 
   ChevronDown, 
@@ -24,10 +24,10 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3 transition-all">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2.5 transition-all shadow-xs">
       <div className="flex items-center justify-between w-full max-w-[1560px] mx-auto">
         {/* Navigation Menu Button & Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={handleToggle}
             className="p-2 sm:p-2.5 rounded-2xl text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 bg-slate-50/80 hover:bg-slate-100 border border-slate-200/90 hover:border-emerald-200 flex items-center justify-center shadow-xs transition-all cursor-pointer group"
@@ -37,17 +37,11 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
             <Menu className="w-5 h-5 group-hover:scale-105 transition-transform" />
           </button>
 
-          <div 
+          <KrishiYugLogo 
+            size="md"
             onClick={() => onNavigate && onNavigate("dashboard")}
-            className="cursor-pointer flex items-center group select-none py-0.5"
-            title="KrishiYug Dashboard"
-          >
-            <img 
-              src="/images/logo.png" 
-              alt="KrishiYug Logo" 
-              className="h-10 sm:h-11 md:h-12 w-auto object-contain transition-transform group-hover:scale-102"
-            />
-          </div>
+            className="py-0.5"
+          />
         </div>
 
         {/* Action Controls */}
