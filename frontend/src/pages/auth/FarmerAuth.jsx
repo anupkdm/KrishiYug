@@ -1,15 +1,18 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useOfflineSync } from "../../context/OfflineSyncContext";
 import { LanguageSelector } from "../../components/common/LanguageSelector";
-import { Sprout, ArrowLeft, Lock, Mail, User, Phone, MapPin, Layers, CheckCircle2 } from "lucide-react";
+import { Sprout, ArrowLeft, Lock, Mail, User, Phone, MapPin, Layers, CheckCircle2, HardDrive } from "lucide-react";
 
 export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
   const [isRegister, setIsRegister] = useState(initialMode === "register");
   const { farmerLogin, farmerRegister, error } = useAuth();
+  const { executeWithOfflineSupport } = useOfflineSync();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [offlineNotice, setOfflineNotice] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,6 +37,7 @@ export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    setOfflineNotice("");
     setLoading(true);
 
     try {
@@ -41,7 +45,22 @@ export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
         if (!formData.name || !formData.email || !formData.password || !formData.district) {
           throw new Error("Please fill in all required registration fields.");
         }
-        await farmerRegister(formData);
+
+        const res = await executeWithOfflineSupport({
+          type: "FARMER_REGISTRATION",
+          title: `Farmer: ${formData.name} (${formData.village}, ${formData.district})`,
+          endpoint: "/auth/farmer/register",
+          payload: formData,
+          directApiCall: () => farmerRegister(formData)
+        });
+
+        if (res.isOfflineQueued) {
+          setOfflineNotice(res.message);
+          setTimeout(() => {
+            onSuccess?.();
+          }, 2400);
+          return;
+        }
       } else {
         if (!formData.email || !formData.password) {
           throw new Error("Please provide your email and password.");
@@ -83,7 +102,24 @@ export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
 
         {/* Form Body */}
         <div className="p-6 sm:p-8">
-          {(formError || error) && (
+          {offlineNotice && (
+            <div className="mb-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 shadow-sm flex items-start gap-3 animate-in fade-in duration-300">
+              <HardDrive className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800">
+                  Offline Recovery Mode Active
+                </h4>
+                <p className="text-xs font-bold mt-0.5 text-emerald-900">
+                  {offlineNotice}
+                </p>
+                <span className="inline-block mt-1 text-[11px] font-semibold text-emerald-700">
+                  📦 Queued in browser IndexedDB. Will sync to MongoDB Atlas when database restores.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {(formError || error) && !offlineNotice && (
             <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
               {formError || error}
             </div>

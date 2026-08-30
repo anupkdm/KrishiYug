@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { CONFIG } from "../config/config.js";
 import { store } from "../models/store.js";
 import { authenticateJWT } from "../middleware/auth.js";
+import { checkDbAvailability } from "../middleware/offlineSimulatorMiddleware.js";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ const createToken = (user, role) => {
 };
 
 // 1. Farmer Registration
-router.post("/farmer/register", async (req, res) => {
+router.post("/farmer/register", checkDbAvailability, async (req, res) => {
   try {
     const {
       name,
@@ -118,7 +119,7 @@ router.post("/farmer/login", async (req, res) => {
 });
 
 // 3. Labour Registration
-router.post("/labour/register", async (req, res) => {
+router.post("/labour/register", checkDbAvailability, async (req, res) => {
   try {
     const {
       name,

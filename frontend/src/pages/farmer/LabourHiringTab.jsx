@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useOfflineSync } from "../../context/OfflineSyncContext";
 import { api } from "../../services/api";
 import { 
   Users, 
@@ -17,12 +18,14 @@ import {
   ShieldCheck, 
   Sparkles,
   Send,
-  AlertCircle
+  AlertCircle,
+  HardDrive
 } from "lucide-react";
 
 export const LabourHiringTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { executeWithOfflineSupport } = useOfflineSync();
   const [labourers, setLabourers] = useState([]);
   const [hiringRequests, setHiringRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +43,7 @@ export const LabourHiringTab = () => {
   const [hireForm, setHireForm] = useState({
     workType: "Harvesting",
     date: new Date().toISOString().split("T")[0],
-    duration: 2,
+    duration: 1,
     notes: ""
   });
   const [submittingHire, setSubmittingHire] = useState(false);
@@ -58,21 +61,12 @@ export const LabourHiringTab = () => {
     { id: "Farm Helper", label: t("labour.helper", "Farm Helper"), icon: "🧑‍🌾" }
   ];
 
-  const WORK_TYPES = [
-    "Harvesting",
-    "Planting / Sowing",
-    "Spraying & Pesticides",
-    "Weeding & Soil Care",
-    "Tractor / Machine Operation",
-    "General Farm Labour"
-  ];
-
   // Fetch Labourers and Hiring Requests from backend
   const fetchData = async () => {
     setLoading(true);
     try {
       const [labourRes, reqsRes] = await Promise.all([
-        api.getLabourers(),
+        api.getLabourers().catch(() => ({ labourers: [] })),
         api.getHiringRequests().catch(() => ({ requests: [] }))
       ]);
 
@@ -95,7 +89,7 @@ export const LabourHiringTab = () => {
     setHireForm({
       workType: labour.skills?.[0] || "Harvesting",
       date: new Date().toISOString().split("T")[0],
-      duration: 2,
+      duration: 1,
       notes: `Hiring for farm work in ${farmerVillage}, ${farmerDistrict}`
     });
   };
@@ -111,7 +105,7 @@ export const LabourHiringTab = () => {
       const duration = parseInt(hireForm.duration) || 1;
       const totalCost = dailyWage * duration;
 
-      const res = await api.sendHiringRequest({
+      const hirePayload = {
         labourId: hireModalLabour.id,
         workType: hireForm.workType,
         date: hireForm.date,
@@ -119,9 +113,21 @@ export const LabourHiringTab = () => {
         dailyWage: dailyWage,
         totalCost: totalCost,
         notes: hireForm.notes
+      };
+
+      const res = await executeWithOfflineSupport({
+        type: "HIRING_REQUEST",
+        title: `Hire ${hireModalLabour.name} (${hireForm.workType})`,
+        endpoint: "/labour/request",
+        payload: hirePayload,
+        directApiCall: () => api.sendHiringRequest(hirePayload)
       });
 
-      setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
+      if (res.isOfflineQueued) {
+        setToastMessage(`💾 Queued offline: Hiring request for ${hireModalLabour.name} saved!`);
+      } else {
+        setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
+      }
       setHireModalLabour(null);
       
       // Refresh requests list

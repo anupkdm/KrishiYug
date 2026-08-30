@@ -158,11 +158,23 @@ class KrishiDataStore {
   updateFarmer(id, updates) {
     const idx = this.farmers.findIndex(f => f.id === id);
     if (idx === -1) return null;
-    this.farmers[idx] = { ...this.farmers[idx], ...updates, updatedAt: new Date().toISOString() };
+    this.farmers[idx] = { 
+      ...this.farmers[idx], 
+      ...updates, 
+      location: { 
+        ...(this.farmers[idx].location || {}), 
+        ...(updates.location || {}) 
+      },
+      farm: { 
+        ...(this.farmers[idx].farm || {}), 
+        ...(updates.farm || {}) 
+      },
+      updatedAt: new Date().toISOString() 
+    };
     this.save();
 
     if (mongoose.connection?.readyState === 1) {
-      FarmerModel.findOneAndUpdate({ id }, updates).catch(err => console.warn("Atlas farmer update:", err.message));
+      FarmerModel.findOneAndUpdate({ id }, this.farmers[idx], { new: true }).catch(err => console.warn("Atlas farmer update:", err.message));
     }
 
     return this.farmers[idx];

@@ -46,18 +46,7 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
 
   return (
     <aside className={containerClasses}>
-      <div className="space-y-4">
-        {/* Navigation Section Header */}
-        <div className="px-2 pt-1 flex items-center justify-between">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-            {t("nav.menu", "Navigation Menu")}
-          </p>
-          <span className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live</span>
-          </span>
-        </div>
-
+      <div className="space-y-2">
         {/* Navigation Links */}
         <nav className="space-y-1.5">
           {navItems.map((item) => {
