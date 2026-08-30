@@ -18,7 +18,6 @@ import {
   Calendar,
   Layers
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const SchemesTab = () => {
   const { user } = useAuth();
@@ -275,7 +274,6 @@ export const SchemesTab = () => {
 
   const handleApplyScheme = (schemeName) => {
     setAppliedSchemes(prev => ({ ...prev, [schemeName]: true }));
-    confetti({ particleCount: 40, spread: 60 });
   };
 
   // Filter 9 boxes by search query

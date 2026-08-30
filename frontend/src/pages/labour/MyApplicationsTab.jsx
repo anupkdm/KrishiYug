@@ -3,7 +3,6 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import { Badge } from "../../components/common/Badge";
 import { FileCheck2, Calendar, IndianRupee, MapPin, CheckCircle2, Clock, Phone, Check, X } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const MyApplicationsTab = () => {
   const { user } = useAuth();
@@ -36,9 +35,6 @@ export const MyApplicationsTab = () => {
   const handleRespondHire = async (id, status) => {
     try {
       await api.updateHiringRequestStatus(id, status);
-      if (status === "Accepted") {
-        confetti({ particleCount: 50, spread: 60 });
-      }
       fetchData();
     } catch (err) {
       alert("Failed to update status: " + err.message);

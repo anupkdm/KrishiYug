@@ -25,7 +25,6 @@ import {
   Award,
   Zap
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const MarketIntelligenceTab = () => {
   const { user } = useAuth();
@@ -88,7 +87,6 @@ export const MarketIntelligenceTab = () => {
       } else {
         throw new Error("No comparison data returned from server");
       }
-      confetti({ particleCount: 40, spread: 65, origin: { y: 0.6 } });
     } catch (err) {
       console.warn("Market comparison API fallback:", err);
 

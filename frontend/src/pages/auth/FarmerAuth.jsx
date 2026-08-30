@@ -3,7 +3,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageSelector } from "../../components/common/LanguageSelector";
 import { Sprout, ArrowLeft, Lock, Mail, User, Phone, MapPin, Layers, CheckCircle2 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
   const [isRegister, setIsRegister] = useState(initialMode === "register");
@@ -43,7 +42,6 @@ export const FarmerAuth = ({ initialMode = "login", onBack, onSuccess }) => {
           throw new Error("Please fill in all required registration fields.");
         }
         await farmerRegister(formData);
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
       } else {
         if (!formData.email || !formData.password) {
           throw new Error("Please provide your email and password.");

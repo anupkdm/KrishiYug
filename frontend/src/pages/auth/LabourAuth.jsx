@@ -3,7 +3,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageSelector } from "../../components/common/LanguageSelector";
 import { ArrowLeft, Lock, Mail, User, Phone, MapPin, Briefcase, IndianRupee, Check } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const LabourAuth = ({ initialMode = "login", onBack, onSuccess }) => {
   const [isRegister, setIsRegister] = useState(initialMode === "register");
@@ -67,7 +66,6 @@ export const LabourAuth = ({ initialMode = "login", onBack, onSuccess }) => {
           throw new Error("Please provide your name, email, password, and at least one skill.");
         }
         await labourRegister(formData);
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
       } else {
         if (!formData.email || !formData.password) {
           throw new Error("Please enter your email and password.");

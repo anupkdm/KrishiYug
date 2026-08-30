@@ -19,7 +19,6 @@ import {
   Send,
   AlertCircle
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const LabourHiringTab = () => {
   const { user } = useAuth();
@@ -122,7 +121,6 @@ export const LabourHiringTab = () => {
         notes: hireForm.notes
       });
 
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
       setToastMessage(`🤝 Hiring request sent to ${hireModalLabour.name}! Worker will accept or call you.`);
       setHireModalLabour(null);
       

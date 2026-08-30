@@ -24,7 +24,6 @@ import {
   Zap,
   TrendingDown
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const PresentationMode = ({ onExit }) => {
   const { user } = useAuth();
@@ -50,10 +49,6 @@ export const PresentationMode = ({ onExit }) => {
     };
     fetchAll();
   }, [telemetry.soilMoisture]);
-
-  const handleConfetti = () => {
-    confetti({ particleCount: 70, spread: 80, origin: { y: 0.5 } });
-  };
 
   const farmer = dashboardData?.farmer || user;
   const farm = farmer?.farm || {};
@@ -103,14 +98,6 @@ export const PresentationMode = ({ onExit }) => {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isTicking ? "animate-spin text-emerald-400" : ""}`} />
             <span>Live Telemetry Tick</span>
-          </button>
-
-          <button
-            onClick={handleConfetti}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 text-xs font-bold shadow-md hover:scale-105 transition-all"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Pitch Applause</span>
           </button>
 
           <button

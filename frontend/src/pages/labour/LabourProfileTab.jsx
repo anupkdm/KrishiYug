@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import { User, Phone, MapPin, IndianRupee, Save, CheckCircle2, ShieldCheck, Check } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const LabourProfileTab = () => {
   const { user, updateUserProfile } = useAuth();
@@ -64,7 +63,6 @@ export const LabourProfileTab = () => {
         expectedDailyWage: parseFloat(formData.expectedDailyWage)
       });
       updateUserProfile(res.labour);
-      confetti({ particleCount: 40, spread: 60 });
       setSavedMsg("Agricultural labour profile updated successfully!");
     } catch (err) {
       alert("Failed to update profile: " + err.message);

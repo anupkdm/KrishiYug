@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import { User, MapPin, Sprout, Save, CheckCircle2, ShieldCheck } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const FarmerProfileTab = () => {
   const { user, updateUserProfile } = useAuth();
@@ -53,7 +52,6 @@ export const FarmerProfileTab = () => {
       });
 
       updateUserProfile(res.farmer);
-      confetti({ particleCount: 40, spread: 60 });
       setSavedMessage("Farmer profile and farm parameters updated successfully!");
     } catch (err) {
       alert("Failed to update profile: " + err.message);

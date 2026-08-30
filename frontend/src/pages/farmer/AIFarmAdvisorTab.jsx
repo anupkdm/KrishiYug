@@ -20,7 +20,6 @@ import {
   Send,
   Zap
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const AIFarmAdvisorTab = () => {
   const { user } = useAuth();
@@ -67,7 +66,6 @@ export const AIFarmAdvisorTab = () => {
     try {
       const res = await api.generateAdvisory(formInputs);
       setAdvisoryReport(res);
-      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
     } catch (err) {
       alert("Advisory generation failed: " + err.message);
     } finally {

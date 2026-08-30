@@ -21,7 +21,6 @@ import {
   ShieldCheck,
   Zap
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 export const MachineryTab = () => {
   const { user } = useAuth();
@@ -203,7 +202,6 @@ export const MachineryTab = () => {
 
     setTimeout(() => {
       setMachines(prev => [newMachine, ...prev]);
-      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
       setProvideSuccessMsg(`🎉 Machine "${newMachine.name}" (${newMachine.modelNumber}) added to rental portal successfully!`);
       setSubmittingProvide(false);
       
@@ -223,7 +221,6 @@ export const MachineryTab = () => {
     setSubmittingRent(true);
 
     setTimeout(() => {
-      confetti({ particleCount: 50, spread: 60 });
       setRentSuccessMsg(`Booking request sent to owner ${rentMachine.ownerName} for ${rentMachine.name}!`);
       setSubmittingRent(false);
       setRentMachine(null);
