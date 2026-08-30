@@ -1,6 +1,7 @@
 import React from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { LanguageSelector } from "../components/common/LanguageSelector";
+import { KrishiYugLogo } from "../components/common/KrishiYugLogo";
 import { Footer } from "../components/layout/Footer";
 import { 
   Sprout, 
@@ -51,13 +52,7 @@ export const LandingPage = ({ onSelectAuth }) => {
       {/* Top Clean Navigation */}
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-50 px-4 sm:px-8 py-3 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/images/logo.png" 
-              alt="KrishiYug Logo" 
-              className="h-10 sm:h-11 md:h-12 w-auto object-contain cursor-pointer"
-            />
-          </div>
+          <KrishiYugLogo size="md" />
 
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Language Selector */}

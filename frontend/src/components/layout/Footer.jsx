@@ -1,5 +1,6 @@
 import React from "react";
 import { useLanguage } from "../../context/LanguageContext";
+import { KrishiYugLogo } from "../common/KrishiYugLogo";
 import { 
   Sprout, 
   PhoneCall, 
@@ -24,14 +25,11 @@ export const Footer = ({ onNavigate }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-white/10">
           {/* Column 1: Brand & Mission */}
           <div className="space-y-3.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-xl shadow-inner">
-                🌱
-              </div>
-              <span className="text-xl font-black tracking-tight font-display text-white">
-                {t("common.appName")}
-              </span>
-            </div>
+            <KrishiYugLogo 
+              variant="light" 
+              size="md" 
+              onClick={() => onNavigate && onNavigate("dashboard")}
+            />
             
             <p className="text-xs text-emerald-100/80 leading-relaxed">
               {t("footer.tagline")}
