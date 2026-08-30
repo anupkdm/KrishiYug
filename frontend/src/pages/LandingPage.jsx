@@ -317,7 +317,7 @@ export const LandingPage = ({ onSelectAuth }) => {
       </main>
 
       {/* Universal Rich Footer */}
-      <Footer onNavigate={() => onSelectAuth("farmer-login")} />
+      <Footer onNavigate={(tab) => tab === "about" ? onSelectAuth("about") : onSelectAuth("farmer-login")} />
     </div>
   );
 };

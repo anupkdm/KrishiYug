@@ -13,7 +13,8 @@ import {
   FileCheck2, 
   Wallet,
   PhoneCall,
-  ChevronRight
+  ChevronRight,
+  Info
 } from "lucide-react";
 
 export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
@@ -27,6 +28,7 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
     { id: "machinery", label: t("nav.machinery"), icon: Tractor },
     { id: "schemes", label: t("nav.schemes"), icon: Landmark },
     { id: "ai-advisor", label: t("nav.farmAdvice"), icon: BrainCircuit },
+    { id: "about", label: t("nav.about", "About & Data Sources"), icon: Info },
     { id: "profile", label: t("nav.profile"), icon: UserCheck },
   ];
 
@@ -34,6 +36,7 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
     { id: "my-applications", label: t("nav.myApplications"), icon: FileCheck2 },
     { id: "my-work", label: t("nav.workAndWages"), icon: Wallet },
+    { id: "about", label: t("nav.about", "About & Data Sources"), icon: Info },
     { id: "profile", label: t("nav.profile"), icon: UserCheck },
   ];
 

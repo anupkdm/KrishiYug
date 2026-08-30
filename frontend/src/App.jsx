@@ -30,6 +30,7 @@ import { LabourProfileTab } from "./pages/labour/LabourProfileTab";
 
 // Shared Tabs
 import { PresentationMode } from "./pages/PresentationMode";
+import { AboutDataSourcesTab } from "./pages/AboutDataSourcesTab";
 
 const AppContent = () => {
   const { isAuthenticated, isFarmer, isLabour, loading } = useAuth();
@@ -117,6 +118,35 @@ const AppContent = () => {
       );
     }
 
+    if (currentView === "about") {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+          <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-50 px-4 sm:px-8 py-3 shadow-xs">
+            <div className="max-w-[1560px] mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView("landing")}>
+                <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                  🌾
+                </div>
+                <span className="font-extrabold text-lg text-slate-900 tracking-tight font-display">
+                  Krishi<span className="text-emerald-700">Yug</span>
+                </span>
+              </div>
+              <button
+                onClick={() => setCurrentView("landing")}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs"
+              >
+                ← Back to Home
+              </button>
+            </div>
+          </header>
+          <div className="flex-1 w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <AboutDataSourcesTab onNavigate={(tab) => setCurrentView("farmer-login")} />
+          </div>
+          <Footer onNavigate={(tab) => tab === "about" ? setCurrentView("about") : setCurrentView("farmer-login")} />
+        </div>
+      );
+    }
+
     return (
       <LandingPage
         onSelectAuth={(view) => setCurrentView(view)}
@@ -139,6 +169,8 @@ const AppContent = () => {
         return <MarketIntelligenceTab />;
       case "ai-advisor":
         return <AIFarmAdvisorTab />;
+      case "about":
+        return <AboutDataSourcesTab onNavigate={handleNavigate} />;
       case "profile":
         return <FarmerProfileTab />;
       default:
@@ -154,6 +186,8 @@ const AppContent = () => {
         return <MyApplicationsTab onNavigate={handleNavigate} />;
       case "my-work":
         return <MyWorkTab />;
+      case "about":
+        return <AboutDataSourcesTab onNavigate={handleNavigate} />;
       case "profile":
         return <LabourProfileTab />;
       default:
