@@ -10,7 +10,6 @@ import {
   BrainCircuit, 
   UserCheck, 
   LogOut, 
-  Briefcase, 
   FileCheck2, 
   Wallet,
   PhoneCall,
@@ -33,7 +32,6 @@ export const Sidebar = ({ currentTab, onNavigate, isMobile = false }) => {
 
   const labourNavItems = [
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
-    { id: "available-jobs", label: t("nav.availableJobs"), icon: Briefcase },
     { id: "my-applications", label: t("nav.myApplications"), icon: FileCheck2 },
     { id: "my-work", label: t("nav.workAndWages"), icon: Wallet },
     { id: "profile", label: t("nav.profile"), icon: UserCheck },
