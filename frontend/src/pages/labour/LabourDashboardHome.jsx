@@ -264,7 +264,7 @@ export const LabourDashboardHome = ({ onNavigate }) => {
               {t("labourDashboard.projectWorkflowTitle", "Project Workflow")}
             </h2>
             <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
-              {t("labourDashboard.projectWorkflowSubtitle", "Complete step-by-step journey of a labourer on KrishiMitra")}
+              {t("labourDashboard.projectWorkflowSubtitle", "Complete step-by-step journey of a labourer on KrishiYug")}
             </p>
           </div>
         </div>

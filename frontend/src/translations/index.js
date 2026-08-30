@@ -1,9 +1,9 @@
 export const translations = {
   en: {
     common: {
-      appName: "KrishiMitra",
+      appName: "KrishiYug",
       tagline: "A trusted digital companion for farmers and farm workers",
-      portal: "KrishiMitra Portal",
+      portal: "KrishiYug Portal",
       login: "Login",
       register: "Register",
       logout: "Logout",
@@ -187,7 +187,7 @@ export const translations = {
       skill: "Skill",
       expectedDailyWages: "Expected Daily Wages",
       projectWorkflowTitle: "Project Workflow",
-      projectWorkflowSubtitle: "Complete step-by-step journey of a labourer on KrishiMitra",
+      projectWorkflowSubtitle: "Complete step-by-step journey of a labourer on KrishiYug",
       step1Title: "① Registration",
       step1Desc: "Labourer creates an account.",
       step2Title: "② Profile",
@@ -383,15 +383,15 @@ export const translations = {
       helplineNumber: "1800-180-1551 (Toll-Free)",
       helplineTime: "Available 24x7 across Maharashtra & India",
       regionalCenter: "Regional Hub: Nashik APMC, Maharashtra",
-      copyright: "KrishiMitra. Dedicated to the prosperity of Indian Farmers & Workers."
+      copyright: "KrishiYug. Dedicated to the prosperity of Indian Farmers & Workers."
     }
   },
 
   mr: {
     common: {
-      appName: "कृषिमित्र",
+      appName: "कृषियुग",
       tagline: "शेतकरी आणि शेतमजुरांचा खरा डिजिटल साथीदार",
-      portal: "कृषिमित्र पोर्टल",
+      portal: "कृषियुग पोर्टल",
       login: "लॉगिन",
       register: "नोंदणी करा",
       logout: "लॉगआउट",
@@ -771,15 +771,15 @@ export const translations = {
       helplineNumber: "1800-180-1551 (टोल-फ्री)",
       helplineTime: "संपूर्ण महाराष्ट्र व भारतात २४x७ उपलब्ध",
       regionalCenter: "प्रादेशिक केंद्र: नाशिक कृषी उत्पन्न बाजार समिती",
-      copyright: "कृषिमित्र। भारतीय शेतकरी आणि शेतमजुरांच्या सेवेसाठी समर्पित."
+      copyright: "कृषियुग। भारतीय शेतकरी आणि शेतमजुरांच्या सेवेसाठी समर्पित."
     }
   },
 
   hi: {
     common: {
-      appName: "कृषिमित्र",
+      appName: "कृषियुग",
       tagline: "किसानों और खेत मजदूरों का सच्चा डिजिटल साथी",
-      portal: "कृषिमित्र पोर्टल",
+      portal: "कृषियुग पोर्टल",
       login: "लॉगिन",
       register: "पंजीकरण करें",
       logout: "लॉगआउट",
@@ -1159,7 +1159,7 @@ export const translations = {
       helplineNumber: "1800-180-1551 (टोल-फ्री)",
       helplineTime: "पूरे भारत और महाराष्ट्र में 24x7 उपलब्ध",
       regionalCenter: "क्षेत्रीय केंद्र: नासिक कृषि उपज मंडी समिति",
-      copyright: "कृषिमित्र। भारतीय किसानों और खेत मजदूरों की समृद्धि के लिए समर्पित।"
+      copyright: "कृषियुग। भारतीय किसानों और खेत मजदूरों की समृद्धि के लिए समर्पित।"
     }
   }
 };
