@@ -25,11 +25,12 @@ export const Footer = ({ onNavigate }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-white/10">
           {/* Column 1: Brand & Mission */}
           <div className="space-y-3.5">
-            <KrishiYugLogo 
-              variant="light" 
-              size="md" 
-              onClick={() => onNavigate && onNavigate("dashboard")}
-            />
+            <div className="inline-block bg-white px-3 py-1.5 rounded-2xl shadow-sm">
+              <KrishiYugLogo 
+                size="sm" 
+                onClick={() => onNavigate && onNavigate("dashboard")}
+              />
+            </div>
             
             <p className="text-xs text-emerald-100/80 leading-relaxed">
               {t("footer.tagline")}
