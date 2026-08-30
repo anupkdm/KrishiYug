@@ -375,7 +375,7 @@ export const LabourHiringTab = () => {
                         className="w-full py-2.5 px-3 rounded-2xl border-2 border-slate-300 hover:border-emerald-600 hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
                         <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>📞 {t("labour.contact", "CONTACT")}</span>
+                        <span>{t("labour.contact", "CONTACT")}</span>
                       </button>
 
                       <button
