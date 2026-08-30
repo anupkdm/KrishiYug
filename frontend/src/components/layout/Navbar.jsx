@@ -38,25 +38,15 @@ export const Navbar = ({ onNavigate, currentTab, onToggleSidebar, onToggleMobile
           </button>
 
           <div 
-            onClick={() => onNavigate("dashboard")}
-            className="cursor-pointer flex items-center gap-2.5 group"
+            onClick={() => onNavigate && onNavigate("dashboard")}
+            className="cursor-pointer flex items-center group select-none py-0.5"
+            title="KrishiYug Dashboard"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-700 to-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 font-display">
-                  Krishi<span className="text-emerald-600">Yug</span>
-                </span>
-                <span className="hidden md:inline-flex px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  {t("common.portal")}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                {t("common.tagline")}
-              </p>
-            </div>
+            <img 
+              src="/images/logo.png" 
+              alt="KrishiYug Logo" 
+              className="h-10 sm:h-11 md:h-12 w-auto object-contain transition-transform group-hover:scale-102"
+            />
           </div>
         </div>
 

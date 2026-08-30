@@ -52,22 +52,11 @@ export const LandingPage = ({ onSelectAuth }) => {
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-50 px-4 sm:px-8 py-3 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
-              <Sprout className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 font-display">
-                  Krishi <span className="text-emerald-600">Intelligence</span>
-                </span>
-                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
-                  {t("common.portal")}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                {t("common.tagline")}
-              </p>
-            </div>
+            <img 
+              src="/images/logo.png" 
+              alt="KrishiYug Logo" 
+              className="h-10 sm:h-11 md:h-12 w-auto object-contain cursor-pointer"
+            />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
