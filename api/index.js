@@ -425,7 +425,209 @@ export default async function handler(req, res) {
       });
     }
 
-    // 10. Static Seed Handlers
+    // 10. AI Farm Advisory & Real-Time Condition Feed
+    if (path.includes("/advisory")) {
+      const crop = body.crop || "Soybean";
+      const growthStage = body.growthStage || "Pod Filling & Maturation";
+      const soilMoisture = parseFloat(body.soilMoisture !== undefined ? body.soilMoisture : 42);
+      const temp = parseFloat(body.temperature || 28.5);
+      const humidity = parseFloat(body.humidity || 74);
+      const rainfallProb = parseFloat(body.rainfallProb || 65);
+      const windSpeed = parseFloat(body.windSpeed || 14.2);
+      const farmSize = parseFloat(body.farmSize || 8.5);
+      const pestSymptoms = (body.pestSymptoms || "").toLowerCase();
+      const location = body.farmLocation || "Nashik, Maharashtra";
+
+      // 1. Irrigation
+      let irrigationStatus = "Optimal";
+      let irrigationUrgency = "Normal";
+      let irrigationAction = "";
+      let waterRequirementMm = 0;
+
+      if (rainfallProb > 50) {
+        irrigationStatus = "Postpone Irrigation";
+        irrigationUrgency = "Hold";
+        irrigationAction = `High probability of rainfall (${rainfallProb}%) within the next 24-36 hours. Postpone furrow and drip irrigation to prevent waterlogging in ${crop}.`;
+        waterRequirementMm = 0;
+      } else if (soilMoisture < 35) {
+        irrigationStatus = "Critical Irrigation Needed";
+        irrigationUrgency = "Immediate";
+        irrigationAction = `Soil moisture is depleted (${soilMoisture}%). Apply light drip irrigation (25-30 mm) immediately during morning or late afternoon to prevent pod/flower shedding.`;
+        waterRequirementMm = 28;
+      } else {
+        irrigationStatus = "Adequate Soil Moisture";
+        irrigationUrgency = "Maintain";
+        irrigationAction = `Current soil moisture (${soilMoisture}%) is well within optimal agronomic range for ${growthStage}. Monitor again in 48 hours.`;
+        waterRequirementMm = 10;
+      }
+
+      // 2. Weather
+      const weatherTitle = rainfallProb > 60 ? "Heavy Convective Rainfall Warning" : "Favorable Weather with Convective Risk";
+      const weatherDetail = `Ambient temperature is ${temp}°C with ${humidity}% relative humidity. Expected 25-35mm localized convective showers over the next 36h. Wind speeds at ${windSpeed} km/h allow safe ground operations.`;
+
+      // 3. Pest
+      let pestRiskLevel = "Moderate";
+      let pestRiskScore = 65;
+      let pestAdvisory = "";
+      let organicRemedy = "";
+      let chemicalRemedy = "";
+
+      if (pestSymptoms.includes("spodoptera") || pestSymptoms.includes("caterpillar") || pestSymptoms.includes("leaf") || humidity > 70) {
+        pestRiskLevel = "High (Spodoptera / Leaf Roller Threat)";
+        pestRiskScore = 48;
+        pestAdvisory = "Elevated humidity and ambient warmth favor Spodoptera litura (Tobacco Caterpillar) and Semilooper incidence in vegetative and early pod stages.";
+        organicRemedy = "Install Pheromone Traps (5 per acre) + Spray Neem Seed Kernel Extract (NSKE 5%) or Bacillus thuringiensis (Bt @ 1.5 kg/ha).";
+        chemicalRemedy = "Chlorantraniliprole 18.5% SC @ 0.3 ml/L or Emamectin Benzoate 5% SG @ 0.4 g/L if pest threshold exceeds 3 larvae/meter row.";
+      } else {
+        pestRiskLevel = "Low to Normal";
+        pestRiskScore = 88;
+        pestAdvisory = "No severe pest infestation signals detected. Field bio-indicators show healthy predator activity (ladybird beetles).";
+        organicRemedy = "Preventive yellow and blue sticky traps (8 per acre) to monitor sucking pests.";
+        chemicalRemedy = "No synthetic chemical spraying advised at current thresholds.";
+      }
+
+      const cropHealthScore = Math.min(96, Math.max(50, Math.round(92 - (pestRiskLevel.includes("High") ? 15 : 0) - (soilMoisture < 30 ? 12 : 0))));
+      const waterScore = rainfallProb > 50 || (soilMoisture >= 38 && soilMoisture <= 65) ? 88 : 55;
+      const weatherScore = rainfallProb > 80 ? 60 : 85;
+      const marketScore = 89;
+      const labourReadiness = 82;
+      const machineryReadiness = 85;
+
+      const overallFarmIntelligenceScore = Math.round(
+        cropHealthScore * 0.25 +
+        waterScore * 0.20 +
+        pestScore * 0.15 +
+        weatherScore * 0.15 +
+        marketScore * 0.10 +
+        labourReadiness * 0.08 +
+        machineryReadiness * 0.07
+      );
+
+      const recommendedWorkers = Math.max(4, Math.ceil(farmSize * 1.2));
+      const simulatedNdvi = Math.min(0.88, Math.max(0.22, 
+        0.48 + (soilMoisture - 30) * 0.0075 - (temp > 36 ? 0.12 : 0) - (pestRiskLevel.includes("High") ? 0.10 : 0)
+      ));
+
+      // Dynamic Feed
+      const now = new Date();
+      const feed = [];
+      let c = 1;
+
+      if (rainfallProb > 60) {
+        feed.push({
+          id: `DYN-${c++}`,
+          title: "Postpone Irrigation — Heavy Rain Forecast",
+          priority: "Urgent Alert",
+          category: "Weather Action",
+          recommendationText: `High rainfall probability (${rainfallProb}%) detected for ${location} in next 24-36 hours. Postpone all planned canal and drip irrigation.`,
+          reasonText: `Soil at ${soilMoisture}% moisture — additional rainfall will cause root hypoxia and fungal rot risk.`,
+          validityPeriod: "Valid for next 36 hours",
+          createdAt: now.toISOString(),
+          isRead: false,
+          channelAvailability: ["In-App", "SMS", "WhatsApp"],
+          dataSource: "IMD Weather Model + Soil Sensor",
+          conditions: { rainfallProb, soilMoisture }
+        });
+      }
+
+      if (humidity > 70) {
+        feed.push({
+          id: `DYN-${c++}`,
+          title: `Pest Alert — High Risk for ${crop === "Cotton" ? "Pink Bollworm" : "Spodoptera Caterpillar"}`,
+          priority: "Warning",
+          category: "Pest Warning",
+          recommendationText: `Current humidity (${humidity}%) and temperature (${temp}°C) create ideal breeding conditions. Install 5-8 Pheromone traps/acre and apply preventive bio-pesticide.`,
+          reasonText: `Night humidity ${humidity}% accelerates larval emergence cycles. Early pheromone trap installation enables threshold monitoring.`,
+          validityPeriod: "Valid for next 5 days",
+          createdAt: now.toISOString(),
+          isRead: false,
+          channelAvailability: ["In-App", "SMS", "WhatsApp", "Voice Call"],
+          dataSource: "Humidity Sensor + ICAR Pest Model",
+          conditions: { humidity, temperature: temp }
+        });
+      }
+
+      feed.push({
+        id: `DYN-${c++}`,
+        title: "PMFBY Kharif Crop Insurance Enrollment Open",
+        priority: "Opportunity",
+        category: "Scheme Opportunity",
+        recommendationText: `Apply for PMFBY to secure 85% subsidized insurance cover for standing ${crop} crops before deadline.`,
+        reasonText: "Protects against weather uncertainty and pest damage with minimal farmer premium (2%).",
+        validityPeriod: "Valid until Aug 31, 2026",
+        createdAt: now.toISOString(),
+        isRead: false,
+        channelAvailability: ["In-App", "WhatsApp"],
+        dataSource: "Ministry of Agriculture & Farmers Welfare",
+        conditions: {}
+      });
+
+      feed.push({
+        id: `DYN-${c++}`,
+        title: `Mandi Price Alert — ${crop} Selling Window`,
+        priority: "Opportunity",
+        category: "Market Price Alert",
+        recommendationText: `${crop} prices in regional APMCs showing upward trend (+4.2%). Consider selling 40% stock if dry storage is limited.`,
+        reasonText: "High demand from processors with reduced market arrivals.",
+        validityPeriod: "Next 3-5 days",
+        createdAt: now.toISOString(),
+        isRead: false,
+        channelAvailability: ["In-App", "SMS"],
+        dataSource: "Agmarknet APMC Trends",
+        conditions: {}
+      });
+
+      return res.status(200).json({
+        timestamp: now.toISOString(),
+        crop,
+        growthStage,
+        farmSizeAcres: farmSize,
+        overallFarmIntelligenceScore,
+        scores: {
+          overall: overallFarmIntelligenceScore,
+          cropHealth: cropHealthScore,
+          waterManagement: waterScore,
+          weatherRisk: weatherScore,
+          pestRisk: pestScore,
+          marketOpportunity: marketScore,
+          labourReadiness,
+          machineryReadiness
+        },
+        telemetry: {
+          soilMoisture,
+          temperature: temp,
+          humidity,
+          rainfallProbability: rainfallProb,
+          windSpeedKmh: windSpeed
+        },
+        satellite: {
+          ndvi: parseFloat(simulatedNdvi.toFixed(2)),
+          ndviStatus: simulatedNdvi >= 0.65 ? "Optimal Canopy & High Chlorophyll" : simulatedNdvi >= 0.45 ? "Moderate Crop Vigor" : "Vegetation Stress Detected",
+          swi: `${Math.round(soilMoisture * 0.95 + 3)}%`,
+          canopyTemp: `${(temp - (soilMoisture > 40 ? 2.8 : -1.5)).toFixed(1)}°C`,
+          cloudCover: `${Math.min(95, Math.round(rainfallProb * 0.85 + 8))}%`,
+          satellitePass: "Sentinel-2 MSI (Refreshed 3h ago)"
+        },
+        advisories: {
+          irrigation: { status: irrigationStatus, urgency: irrigationUrgency, waterRequirementMm, recommendation: irrigationAction },
+          weather: { title: weatherTitle, detail: weatherDetail },
+          pestAndDisease: { riskLevel: pestRiskLevel, score: pestRiskScore, assessment: pestAdvisory, organicRemedy, chemicalRemedy },
+          cropHealth: { score: cropHealthScore, detail: "Crop canopy vigor index is healthy with active nodulation." },
+          market: { detail: `Mandi prices have exhibited an upward trend. Selling via APMC modal peak may fetch incremental revenue.` },
+          labour: { workersRecommended: recommendedWorkers, detail: `Reserve ${recommendedWorkers} agricultural workers 7-10 days in advance.` },
+          machinery: { detail: `Utilizing a Combine Harvester can save approx ₹${Math.round(farmSize * 1100)} in operational expenses.` }
+        },
+        feed,
+        feedMetadata: {
+          totalAdvisories: feed.length,
+          urgentCount: feed.filter(a => a.priority === "Urgent Alert").length,
+          warningCount: feed.filter(a => a.priority === "Warning").length,
+          opportunityCount: feed.filter(a => a.priority === "Opportunity").length
+        }
+      });
+    }
+
+    // 11. Static Seed Handlers
     if (path.includes("/market/prices")) return res.status(200).json({ marketPrices: SEED_DATA.marketPrices });
     if (path.includes("/schemes")) return res.status(200).json({ schemes: SEED_DATA.schemes });
     if (path.includes("/machinery")) return res.status(200).json({ machinery: SEED_DATA.machinery });

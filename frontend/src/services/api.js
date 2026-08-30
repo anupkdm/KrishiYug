@@ -400,6 +400,11 @@ class ApiService {
     return this.request(`/advisory/latest${qs ? `?${qs}` : ''}`);
   }
 
+  getAdvisoryFeed(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/advisory/feed${qs ? `?${qs}` : ''}`);
+  }
+
   // Dashboards
   getFarmerDashboard() {
     return this.request("/dashboard/farmer");

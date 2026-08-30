@@ -23,6 +23,17 @@ router.get("/latest", (req, res) => {
   res.json(advisory);
 });
 
+// GET Dynamic Condition-Driven Advisory Feed
+router.get("/feed", (req, res) => {
+  try {
+    const feed = AdvisoryService.generateAdvisoryFeed(req.query);
+    res.json(feed);
+  } catch (err) {
+    console.error("Advisory feed error:", err);
+    res.status(500).json({ error: "Failed to generate condition-based advisory feed" });
+  }
+});
+
 // GET Advisory History
 router.get("/history", (req, res) => {
   res.json({ advisories: store.advisories.slice(0, 10) });
