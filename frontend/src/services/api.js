@@ -429,6 +429,27 @@ class ApiService {
   markAllNotificationsRead() {
     return this.request("/notifications/read-all", { method: "PUT" });
   }
+
+  // Database Resilience & Offline Recovery Simulation
+  getDbHealth() {
+    return this.request("/simulation/db-health");
+  }
+
+  toggleDbFailure() {
+    return this.request("/simulation/toggle-db-failure", { method: "POST" });
+  }
+
+  restoreDb() {
+    return this.request("/simulation/restore-db", { method: "POST" });
+  }
+
+  replayPendingAction(action) {
+    return this.request(action.endpoint, {
+      method: action.method || "POST",
+      body: JSON.stringify(action.payload),
+      headers: action.token ? { Authorization: `Bearer ${action.token}` } : {}
+    });
+  }
 }
 
 export const api = new ApiService();

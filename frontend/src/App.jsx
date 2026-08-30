@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SimulationProvider } from "./context/SimulationContext";
+import { OfflineSyncProvider } from "./context/OfflineSyncContext";
+import { DisasterResilienceBar } from "./components/common/DisasterResilienceBar";
 import { Navbar } from "./components/layout/Navbar";
 import { Sidebar } from "./components/layout/Sidebar";
 import { Footer } from "./components/layout/Footer";
@@ -223,6 +225,9 @@ const AppContent = () => {
       </div>
 
       <Footer onNavigate={handleNavigate} />
+      
+      {/* Real-time Disaster Resilience & Recovery Demo Controller */}
+      <DisasterResilienceBar />
     </div>
   );
 };
@@ -232,7 +237,9 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <SimulationProvider>
-          <AppContent />
+          <OfflineSyncProvider>
+            <AppContent />
+          </OfflineSyncProvider>
         </SimulationProvider>
       </AuthProvider>
     </LanguageProvider>

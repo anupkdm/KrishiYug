@@ -2,6 +2,7 @@ import express from "express";
 import { store } from "../models/store.js";
 import { MatchingService } from "../services/matchingService.js";
 import { authenticateJWT } from "../middleware/auth.js";
+import { checkDbAvailability } from "../middleware/offlineSimulatorMiddleware.js";
 
 const router = express.Router();
 
@@ -53,7 +54,7 @@ router.get("/matches", (req, res) => {
 });
 
 // POST Labour Application (Apply for a job)
-router.post("/apply", authenticateJWT, (req, res) => {
+router.post("/apply", checkDbAvailability, authenticateJWT, (req, res) => {
   try {
     const { requirementId, note, wageExpected } = req.body;
     if (!requirementId) {
@@ -95,7 +96,7 @@ router.get("/my-applications", authenticateJWT, (req, res) => {
 });
 
 // POST Direct Hiring Request (Farmer -> Labour)
-router.post("/request", authenticateJWT, (req, res) => {
+router.post("/request", checkDbAvailability, authenticateJWT, (req, res) => {
   try {
     const { labourId, workType, date, duration, totalCost, dailyWage, notes } = req.body;
     if (!labourId) {
@@ -145,7 +146,7 @@ router.get("/requests", authenticateJWT, (req, res) => {
 });
 
 // PUT Update Hiring Request Status (Labourer Accepts/Rejects)
-router.put("/request/:id", authenticateJWT, (req, res) => {
+router.put("/request/:id", checkDbAvailability, authenticateJWT, (req, res) => {
   try {
     const { status } = req.body; // "Accepted" | "Rejected" | "Completed"
     if (!status) {
@@ -163,7 +164,7 @@ router.put("/request/:id", authenticateJWT, (req, res) => {
 });
 
 // PUT Update Labour Profile
-router.put("/profile", authenticateJWT, (req, res) => {
+router.put("/profile", checkDbAvailability, authenticateJWT, (req, res) => {
   const updated = store.updateLabour(req.user.id, req.body);
   if (!updated) return res.status(404).json({ error: "Labourer not found" });
   const { passwordHash: _, ...profile } = updated;

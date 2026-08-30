@@ -1,6 +1,39 @@
 import { store } from "../models/store.js";
 
+let isMongoSimulatedDown = false;
+
 export class SimulationService {
+  /**
+   * Get database simulation state
+   */
+  static isDbDown() {
+    return isMongoSimulatedDown;
+  }
+
+  /**
+   * Toggle database simulated failure
+   */
+  static toggleDbFailure() {
+    isMongoSimulatedDown = !isMongoSimulatedDown;
+    return {
+      isHealthy: !isMongoSimulatedDown,
+      simulatedDown: isMongoSimulatedDown,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Restore database simulated state
+   */
+  static restoreDb() {
+    isMongoSimulatedDown = false;
+    return {
+      isHealthy: true,
+      simulatedDown: false,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   /**
    * Executes a simulation tick, fluctuating sensor data and market movements
    */
@@ -37,7 +70,11 @@ export class SimulationService {
       success: true,
       timestamp: new Date().toISOString(),
       telemetry: store.telemetry,
-      activePricesCount: store.marketPrices.length
+      activePricesCount: store.marketPrices.length,
+      dbStatus: {
+        isHealthy: !isMongoSimulatedDown,
+        simulatedDown: isMongoSimulatedDown
+      }
     };
   }
 }

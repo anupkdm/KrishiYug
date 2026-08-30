@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useOfflineSync } from "../../context/OfflineSyncContext";
 import { api } from "../../services/api";
 import { 
   User, 
@@ -16,12 +17,14 @@ import {
   Layers, 
   Droplets, 
   Calendar,
-  Sparkles
+  Sparkles,
+  HardDrive
 } from "lucide-react";
 
 export const FarmerProfileTab = () => {
   const { user, updateUserProfile } = useAuth();
   const { t } = useLanguage();
+  const { executeWithOfflineSupport } = useOfflineSync();
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -150,15 +153,31 @@ export const FarmerProfileTab = () => {
     };
 
     try {
-      const res = await api.updateFarmerProfile(updatePayload);
-      const updatedFarmer = res.farmer || res.user || {
-        ...user,
-        ...updatePayload,
-        location: { ...(user?.location || {}), ...updatePayload.location },
-        farm: { ...(user?.farm || {}), ...updatePayload.farm }
-      };
-      updateUserProfile(updatedFarmer);
-      setSavedMessage("✅ Farmer profile and farm records updated successfully!");
+      const res = await executeWithOfflineSupport({
+        type: "FARMER_PROFILE_UPDATE",
+        title: `Update Profile: ${formData.name}`,
+        endpoint: "/farmer/profile",
+        method: "PUT",
+        payload: updatePayload,
+        directApiCall: () => api.updateFarmerProfile(updatePayload)
+      });
+
+      if (res.isOfflineQueued) {
+        // Apply locally for seamless UX
+        const localUpdated = {
+          ...user,
+          ...updatePayload,
+          location: { ...(user?.location || {}), ...updatePayload.location },
+          farm: { ...(user?.farm || {}), ...updatePayload.farm }
+        };
+        updateUserProfile(localUpdated);
+        setSavedMessage("💾 Profile saved locally in IndexedDB! Will sync when database restores.");
+      } else {
+        const updatedFarmer = res.result?.farmer || res.result?.user || updatePayload;
+        updateUserProfile(updatedFarmer);
+        setSavedMessage("✅ Farmer profile and farm records updated successfully!");
+      }
+
       setIsEditing(false);
       setTimeout(() => setSavedMessage(""), 5000);
     } catch (err) {
