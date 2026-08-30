@@ -363,10 +363,7 @@ export const SchemesTab = () => {
                       {box.icon}
                     </div>
                     <div>
-                      <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
-                        {t("schemes.boxLabel", "Box")} {box.number}
-                      </span>
-                      <h2 className="text-base font-black text-slate-900 font-display mt-1 leading-snug group-hover:text-emerald-800 transition-colors">
+                      <h2 className="text-base font-black text-slate-900 font-display leading-snug group-hover:text-emerald-800 transition-colors">
                         {box.number}. {localizedTitle}
                       </h2>
                     </div>
@@ -424,7 +421,7 @@ export const SchemesTab = () => {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                    {t("schemes.categoryLabel", "Category")} {selectedBox.number}
+                    {selectedBox.badge || t("schemes.verifiedScheme", "Verified Scheme")}
                   </span>
                   <h3 className="text-xl font-black text-slate-900 font-display mt-0.5">
                     {t(`schemes.box${selectedBox.id}`, selectedBox.title)}
