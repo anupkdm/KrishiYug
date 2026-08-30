@@ -30,7 +30,6 @@ export const LabourProfileTab = () => {
     location: user?.location || "",
     preferredWorkArea: user?.preferredWorkArea || "",
     skills: user?.skills || ["General Farm Labour"],
-    experienceYears: user?.experienceYears || "1",
     availability: user?.availability || "Immediate",
     expectedDailyWage: user?.expectedDailyWage || "450",
     bio: user?.bio || ""
@@ -59,8 +58,7 @@ export const LabourProfileTab = () => {
     try {
       const res = await api.updateLabourProfile({
         ...formData,
-        experienceYears: parseInt(formData.experienceYears),
-        expectedDailyWage: parseFloat(formData.expectedDailyWage)
+        expectedDailyWage: parseFloat(formData.expectedDailyWage) || 450
       });
       updateUserProfile(res.labour);
       setSavedMsg("Agricultural labour profile updated successfully!");
@@ -181,17 +179,7 @@ export const LabourProfileTab = () => {
 
         <div className="pt-4 border-t border-slate-100">
           <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">Rates & Availability</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Experience (Years)</label>
-              <input
-                type="number"
-                name="experienceYears"
-                value={formData.experienceYears}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Expected Daily Wage (₹)</label>
               <input

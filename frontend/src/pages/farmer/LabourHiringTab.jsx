@@ -326,7 +326,7 @@ export const LabourHiringTab = () => {
                               {labour.name}
                             </h3>
                             <p className="text-xs font-semibold text-slate-500">
-                              {labour.experienceYears ? `${labour.experienceYears} Years Experience` : "Verified Agricultural Worker"}
+                              {labour.preferredWorkArea ? `📍 ${labour.preferredWorkArea}` : "Verified Agricultural Worker"}
                             </p>
                           </div>
                         </div>
