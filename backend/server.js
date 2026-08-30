@@ -83,13 +83,22 @@ const PORT = CONFIG.PORT;
 // If running directly (not in a serverless environment like Vercel)
 if (process.env.VERCEL !== "1" && process.env.AWS_LAMBDA_FUNCTION_NAME === undefined) {
   connectDB().then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`=======================================================`);
       console.log(`🌱 KRISHI INTELLIGENCE REST API SERVER STARTED`);
       console.log(`🌾 Platform: One Platform. Smarter Farming. Better Decisions.`);
       console.log(`🚀 Server running on: http://localhost:${PORT}`);
       console.log(`📡 Simulation Engine: ACTIVE (${CONFIG.SIMULATION_TICK_SECONDS}s interval)`);
       console.log(`=======================================================`);
+    });
+
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`⚠️ Port ${PORT} is already in use by another running instance.`);
+        console.error(`💡 Tip: Stop the previous terminal or kill the process on port ${PORT}.`);
+      } else {
+        console.error("Server error:", err);
+      }
     });
   });
 }

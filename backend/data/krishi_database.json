@@ -1429,6 +1429,7 @@
       "note": "Expert in onion field weeding without damaging bulbs."
     }
   ],
+  "hiringRequests": [],
   "machineryBookings": [
     {
       "id": "book-1",
@@ -1492,7 +1493,7 @@
     }
   ],
   "telemetry": {
-    "temperature": 28.5,
+    "temperature": 28.8,
     "humidity": 74,
     "rainfallProbNext24h": 65,
     "recentRainfallMm": 12,
@@ -1500,7 +1501,7 @@
     "windSpeedKmh": 14.2,
     "sunlightHours": 6.8,
     "airQualityIndex": 48,
-    "lastUpdated": "2026-08-29T15:10:35.023Z"
+    "lastUpdated": "2026-08-30T00:08:28.355Z"
   },
-  "lastSaved": "2026-08-29T15:10:35.029Z"
+  "lastSaved": "2026-08-30T00:08:28.355Z"
 }
