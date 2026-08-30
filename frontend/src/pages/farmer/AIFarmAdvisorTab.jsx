@@ -450,6 +450,108 @@ export const AIFarmAdvisorTab = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
+          INTERACTIVE TELEMETRY & FARM PARAMETER TUNER (Above Advisories)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-slate-900 font-display">
+              Adjust Farm Parameters & Telemetry Inputs
+            </h2>
+          </div>
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            Advisories auto-adapt in real time
+          </span>
+        </div>
+
+        <form onSubmit={handleGenerate} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Crop
+              </label>
+              <select
+                value={formInputs.crop}
+                onChange={(e) => setFormInputs({ ...formInputs, crop: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+              >
+                <option value="Soybean">Soybean (सोयाबीन)</option>
+                <option value="Wheat">Wheat (गहू / गेहूं)</option>
+                <option value="Cotton">Cotton (कापूस / कपास)</option>
+                <option value="Onion">Onion (कांदा / प्याज)</option>
+                <option value="Tomato">Tomato (टोमॅटो)</option>
+                <option value="Rice">Rice / Paddy (भात / धान)</option>
+                <option value="Sugarcane">Sugarcane (ऊस / गन्ना)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Crop Growth Stage
+              </label>
+              <input
+                type="text"
+                value={formInputs.growthStage}
+                onChange={(e) => setFormInputs({ ...formInputs, growthStage: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Soil Moisture ({formInputs.soilMoisture}%)
+              </label>
+              <input
+                type="range"
+                min="15"
+                max="85"
+                value={formInputs.soilMoisture}
+                onChange={(e) => setFormInputs({ ...formInputs, soilMoisture: parseFloat(e.target.value) })}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 mt-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Rainfall Prob Next 24h ({formInputs.rainfallProb}%)
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={formInputs.rainfallProb}
+                onChange={(e) => setFormInputs({ ...formInputs, rainfallProb: parseFloat(e.target.value) })}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 mt-2"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Observed Pest Symptoms / Crop Stress Flags
+            </label>
+            <input
+              type="text"
+              value={formInputs.pestSymptoms}
+              onChange={(e) => setFormInputs({ ...formInputs, pestSymptoms: e.target.value })}
+              placeholder="e.g. Spodoptera caterpillar, leaf yellowing, whitefly incidence..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={generating}
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-98"
+          >
+            <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+            <span>{generating ? "Synthesizing AI Agricultural Intelligence..." : "Run AI Advisory Synthesis"}</span>
+          </button>
+        </form>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
           ACTIONABLE FARMER ADVISORIES FEED (from KrishiSamadhan)
           ═══════════════════════════════════════════════════════════════════ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
@@ -613,108 +715,6 @@ export const AIFarmAdvisorTab = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          INTERACTIVE TELEMETRY & FARM PARAMETER TUNER
-          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-slate-900 font-display">
-              Adjust Farm Parameters & Telemetry Inputs
-            </h2>
-          </div>
-          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            Advisories auto-adapt in real time
-          </span>
-        </div>
-
-        <form onSubmit={handleGenerate} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Crop
-              </label>
-              <select
-                value={formInputs.crop}
-                onChange={(e) => setFormInputs({ ...formInputs, crop: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
-              >
-                <option value="Soybean">Soybean (सोयाबीन)</option>
-                <option value="Wheat">Wheat (गहू / गेहूं)</option>
-                <option value="Cotton">Cotton (कापूस / कपास)</option>
-                <option value="Onion">Onion (कांदा / प्याज)</option>
-                <option value="Tomato">Tomato (टोमॅटो)</option>
-                <option value="Rice">Rice / Paddy (भात / धान)</option>
-                <option value="Sugarcane">Sugarcane (ऊस / गन्ना)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Crop Growth Stage
-              </label>
-              <input
-                type="text"
-                value={formInputs.growthStage}
-                onChange={(e) => setFormInputs({ ...formInputs, growthStage: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Soil Moisture ({formInputs.soilMoisture}%)
-              </label>
-              <input
-                type="range"
-                min="15"
-                max="85"
-                value={formInputs.soilMoisture}
-                onChange={(e) => setFormInputs({ ...formInputs, soilMoisture: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 mt-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Rainfall Prob Next 24h ({formInputs.rainfallProb}%)
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formInputs.rainfallProb}
-                onChange={(e) => setFormInputs({ ...formInputs, rainfallProb: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 mt-2"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Observed Pest Symptoms / Crop Stress Flags
-            </label>
-            <input
-              type="text"
-              value={formInputs.pestSymptoms}
-              onChange={(e) => setFormInputs({ ...formInputs, pestSymptoms: e.target.value })}
-              placeholder="e.g. Spodoptera caterpillar, leaf yellowing, whitefly incidence..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={generating}
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-98"
-          >
-            <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-            <span>{generating ? "Synthesizing AI Agricultural Intelligence..." : "Run AI Advisory Synthesis"}</span>
-          </button>
-        </form>
       </div>
     </div>
   );
